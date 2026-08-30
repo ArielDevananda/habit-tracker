@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, Link } from '@inertiajs/react';
 import { Edit, Trash2, Clock, Activity, Book, Flame } from 'lucide-react';
 import { EditHabitModal } from '@/components/edit-habit-modal';
 
 export default function HabitsIndex({ habits = [] }: { habits?: any[] }) {
     const [activeFilter, setActiveFilter] = useState('All Active');
+    const [sortBy, setSortBy] = useState('streak');
     
     // Get unique categories from the user's habits (ignoring null/empty)
     const availableCategories = Array.from(new Set(habits.map(h => h.category).filter(Boolean)));
@@ -13,6 +14,20 @@ export default function HabitsIndex({ habits = [] }: { habits?: any[] }) {
     const filteredHabits = activeFilter === 'All Active' 
         ? habits 
         : habits.filter(h => h.category === activeFilter);
+
+    // Sort habits based on selected sort option
+    const sortedHabits = [...filteredHabits].sort((a, b) => {
+        if (sortBy === 'streak') {
+            return (b.completions_count || 0) - (a.completions_count || 0);
+        }
+        if (sortBy === 'name') {
+            return (a.name || '').localeCompare(b.name || '');
+        }
+        if (sortBy === 'recent') {
+            return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+        }
+        return 0;
+    });
 
     return (
         <>
@@ -44,23 +59,28 @@ export default function HabitsIndex({ habits = [] }: { habits?: any[] }) {
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sort by:</span>
-                        <select className="bg-transparent border-none text-base font-medium text-primary focus:ring-0 cursor-pointer py-1 pl-1 pr-6">
-                            <option>Streak (High to Low)</option>
-                            <option>Name (A-Z)</option>
-                            <option>Recent</option>
+                        <select 
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            className="bg-transparent border-none text-base font-medium text-primary focus:ring-0 cursor-pointer py-1 pl-1 pr-6"
+                        >
+                            <option value="streak">Completions (High to Low)</option>
+                            <option value="name">Name (A-Z)</option>
+                            <option value="recent">Recent</option>
                         </select>
                     </div>
                 </div>
 
                 {/* Bento Grid / Cards List */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {filteredHabits.length === 0 ? (
+                    {sortedHabits.length === 0 ? (
                         <div className="col-span-full bg-card rounded-xl p-8 border border-border border-dashed flex flex-col items-center justify-center text-center">
                             <p className="text-muted-foreground mb-4">No habits found.</p>
                         </div>
                     ) : (
-                        filteredHabits.map((habit: any) => (
-                            <article key={habit.id} className="bg-card rounded-xl p-6 shadow-sm flex flex-col sm:flex-row gap-6 relative group border border-border hover:-translate-y-0.5 hover:shadow-md transition-all">
+                        sortedHabits.map((habit: any) => (
+                            <Link key={habit.id} href={`/habits/${habit.id}`} className="block">
+                            <article className="bg-card rounded-xl p-6 shadow-sm flex flex-col sm:flex-row gap-6 relative group border border-border hover:-translate-y-0.5 hover:shadow-md transition-all cursor-pointer">
                                 {/* Actions Menu (Hover) */}
                                 <div className="absolute top-4 right-4 opacity-0 sm:group-hover:opacity-100 transition-opacity flex gap-2">
                                     <EditHabitModal habit={habit} />
@@ -114,6 +134,7 @@ export default function HabitsIndex({ habits = [] }: { habits?: any[] }) {
                                     </p>
                                 </div>
                             </article>
+                            </Link>
                         ))
                     )}
                 </div>

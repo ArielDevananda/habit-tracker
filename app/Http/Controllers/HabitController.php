@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreHabitRequest;
 use App\Http\Requests\UpdateHabitRequest;
 use App\Models\Habit;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class HabitController extends Controller
 {
@@ -89,6 +91,36 @@ class HabitController extends Controller
     }
 
     /**
+     * Display a single habit's statistics.
+     */
+    public function show(Request $request, Habit $habit): Response
+    {
+        Gate::authorize('view', $habit);
+
+        $habit->load([
+            'completions' => fn (HasMany $query) => $query
+                ->select([
+                    'id',
+                    'habit_id',
+                    'completed_on',
+                    'value',
+                    'note',
+                ])
+                ->whereBetween('completed_on', [
+                    today()->subDays(90),
+                    today()->endOfDay(),
+                ])
+                ->oldest('completed_on'),
+        ]);
+
+        $habit->loadCount('completions as total_completions');
+
+        return Inertia::render('habits/show', [
+            'habit' => $habit,
+        ]);
+    }
+
+    /**
      * Store a newly created habit.
      */
     public function store(StoreHabitRequest $request): RedirectResponse
@@ -154,10 +186,11 @@ class HabitController extends Controller
     {
         Gate::authorize('update', $habit);
 
-        $today = today();
-        
+        $dateStr = $request->input('date');
+        $targetDate = $dateStr ? Carbon::parse($dateStr)->startOfDay() : today();
+
         $completion = $habit->completions()
-            ->whereDate('completed_on', $today)
+            ->whereDate('completed_on', $targetDate)
             ->first();
 
         if ($completion) {
@@ -165,7 +198,7 @@ class HabitController extends Controller
             $message = __('Habit marked as incomplete.');
         } else {
             $habit->completions()->create([
-                'completed_on' => $today,
+                'completed_on' => $targetDate,
                 'value' => $habit->target_value ?? '1',
             ]);
             $message = __('Habit completed!');
@@ -219,6 +252,45 @@ class HabitController extends Controller
 
         return Inertia::render('analytics', [
             'habits' => $habits,
+        ]);
+    }
+
+    /**
+     * Export habit completion data as CSV.
+     */
+    public function export(Request $request): StreamedResponse
+    {
+        Gate::authorize('viewAny', Habit::class);
+
+        $habits = $request->user()
+            ->habits()
+            ->with(['completions' => fn (HasMany $query) => $query->oldest('completed_on')])
+            ->get();
+
+        $fileName = 'habit-tracker-export-'.now()->format('Y-m-d').'.csv';
+
+        return response()->streamDownload(function () use ($habits) {
+            $handle = fopen('php://output', 'w');
+
+            // CSV Header
+            fputcsv($handle, ['Habit Name', 'Category', 'Frequency', 'Completed On', 'Value', 'Note']);
+
+            foreach ($habits as $habit) {
+                foreach ($habit->completions as $completion) {
+                    fputcsv($handle, [
+                        $habit->name,
+                        $habit->category ?? 'General',
+                        $habit->frequency,
+                        $completion->completed_on->format('Y-m-d'),
+                        $completion->value,
+                        $completion->note ?? '',
+                    ]);
+                }
+            }
+
+            fclose($handle);
+        }, $fileName, [
+            'Content-Type' => 'text/csv',
         ]);
     }
 }

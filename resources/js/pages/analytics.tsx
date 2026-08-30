@@ -1,6 +1,6 @@
 import { Head, usePage } from '@inertiajs/react';
 import { type BreadcrumbItem, type SharedData } from '@/types';
-import { Flame, Award, Activity } from 'lucide-react';
+import { Flame, Award, Activity, Download } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -171,6 +171,16 @@ export default function Analytics() {
         <>
             <Head title="Analytics" />
             <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+                {/* Export Button */}
+                <div className="flex justify-end mb-4">
+                    <a 
+                        href="/habits/export" 
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors shadow-sm"
+                    >
+                        <Download className="w-4 h-4" />
+                        Export CSV
+                    </a>
+                </div>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Hero Stat / Overview */}
                     <div className="lg:col-span-2 bg-card/80 backdrop-blur-md border border-border rounded-xl p-6 shadow-sm relative overflow-hidden group">

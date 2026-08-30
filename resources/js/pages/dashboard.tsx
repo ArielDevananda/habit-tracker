@@ -1,4 +1,5 @@
 import { Head, usePage, router } from '@inertiajs/react';
+import { useState } from 'react';
 import { dashboard } from '@/routes';
 import { Flame, MoreHorizontal, CheckCircle2, Plus } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -32,11 +33,17 @@ export default function Dashboard({ habits = [] }: { habits?: Habit[] }) {
     
     // Menghitung tanggal hari ini dengan format YYYY-MM-DD
     const today = new Date().toLocaleDateString('en-CA');
+    const [selectedDate, setSelectedDate] = useState<string>(today);
 
-    // Fungsi bantuan untuk mengecek apakah habit sudah diselesaikan hari ini
-    const isCompletedToday = (habit: Habit) => {
-        return habit.completions.some(c => c.completed_on.startsWith(today));
+    // Fungsi bantuan untuk mengecek apakah habit sudah diselesaikan pada tanggal terpilih
+    const isCompletedOnDate = (habit: any, date: string) => {
+        return habit.completions.some((c: any) => {
+            const completedLocal = new Date(c.completed_on).toLocaleDateString('en-CA');
+            return completedLocal === date;
+        });
     };
+
+    const isCompletedToday = (habit: any) => isCompletedOnDate(habit, selectedDate);
 
     const completedCount = habits.filter(isCompletedToday).length;
     const totalCount = habits.length;
@@ -65,7 +72,19 @@ export default function Dashboard({ habits = [] }: { habits?: Habit[] }) {
                     {/* Daily Habits Column */}
                     <div className="md:col-span-8 flex flex-col space-y-4">
                         <div className="flex justify-between items-center mb-2">
-                            <h3 className="text-xl font-bold text-foreground">Today's Focus</h3>
+                            <div>
+                                <h3 className="text-xl font-bold text-foreground">
+                                    {selectedDate === today ? "Today's Focus" : `Focus for ${new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}`}
+                                </h3>
+                                {selectedDate !== today && (
+                                    <button 
+                                        onClick={() => setSelectedDate(today)}
+                                        className="text-xs text-primary hover:underline mt-1"
+                                    >
+                                        ← Back to Today
+                                    </button>
+                                )}
+                            </div>
                             <div className="flex items-center space-x-4">
                                 <span className="text-xs font-medium text-muted-foreground hidden sm:inline">{completedCount} of {totalCount} completed</span>
                                 {habits.length > 0 && <CreateHabitModal />}
@@ -85,7 +104,7 @@ export default function Dashboard({ habits = [] }: { habits?: Habit[] }) {
                                         <div className="flex items-center space-x-4">
                                             <Checkbox 
                                                 checked={completed} 
-                                                onCheckedChange={() => router.post(`/habits/${habit.id}/toggle`, {}, { preserveScroll: true })}
+                                                onCheckedChange={() => router.post(`/habits/${habit.id}/toggle`, { date: selectedDate }, { preserveScroll: true })}
                                                 className="w-6 h-6 rounded-full" 
                                             />
                                             <div>
@@ -144,9 +163,6 @@ export default function Dashboard({ habits = [] }: { habits?: Habit[] }) {
                         <div className="bg-card rounded-xl p-4 md:p-6 shadow-sm border border-border">
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-sm font-medium text-foreground">Weekly Overview</h3>
-                                <button className="text-muted-foreground hover:text-primary transition-colors">
-                                    <MoreHorizontal className="w-5 h-5" />
-                                </button>
                             </div>
                             <div className="flex justify-between">
                                 {Array.from({ length: 7 }).map((_, i) => {
@@ -176,7 +192,10 @@ export default function Dashboard({ habits = [] }: { habits?: Habit[] }) {
 
                                     const dayTotal = targetHabits.length;
                                     const dayCompleted = targetHabits.filter(h => 
-                                        h.completions.some(c => c.completed_on.startsWith(dateString))
+                                        h.completions.some((c: any) => {
+                                            const completedLocal = new Date(c.completed_on).toLocaleDateString('en-CA');
+                                            return completedLocal === dateString;
+                                        })
                                     ).length;
 
                                     const allDone = dayTotal > 0 && dayCompleted === dayTotal;
@@ -184,27 +203,33 @@ export default function Dashboard({ habits = [] }: { habits?: Habit[] }) {
                                     const noneDone = dayCompleted === 0;
                                     const isPast = d < new Date(new Date().setHours(0,0,0,0));
 
+                                    const isSelected = selectedDate === dateString;
+
                                     return (
-                                        <div key={i} className={`flex flex-col items-center space-y-2 ${(!isToday && !isPast) ? 'opacity-50' : ''}`}>
-                                            <span className={`text-xs font-medium ${isToday ? 'text-foreground font-bold' : 'text-muted-foreground'}`}>{dayName}</span>
+                                        <button 
+                                            key={i} 
+                                            onClick={() => setSelectedDate(dateString)}
+                                            className={`flex flex-col items-center space-y-2 focus:outline-none transition-transform hover:scale-110 active:scale-95 ${(!isToday && !isPast) ? 'opacity-50' : 'cursor-pointer'}`}
+                                        >
+                                            <span className={`text-xs font-medium ${isToday ? 'text-foreground font-bold' : 'text-muted-foreground'} ${isSelected ? 'text-primary' : ''}`}>{dayName}</span>
                                             {allDone ? (
-                                                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-card' : ''} bg-primary/20 text-primary`}>
                                                     <CheckCircle2 className="w-4 h-4" />
                                                 </div>
-                                            ) : isToday ? (
-                                                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-md">
+                                            ) : (isToday || isSelected) ? (
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md ${isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-card' : ''} bg-primary text-primary-foreground`}>
                                                     <span className="text-xs font-medium">{dayCompleted}/{dayTotal}</span>
                                                 </div>
                                             ) : someDone ? (
-                                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary/70">
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-card' : ''} bg-primary/10 text-primary/70`}>
                                                     <span className="text-xs font-medium">{dayCompleted}</span>
                                                 </div>
                                             ) : (
-                                                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-card' : ''} bg-muted text-muted-foreground`}>
                                                     {dayTotal > 0 && isPast ? '-' : ''}
                                                 </div>
                                             )}
-                                        </div>
+                                        </button>
                                     );
                                 })}
                             </div>
