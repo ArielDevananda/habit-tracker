@@ -1,0 +1,40 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+
+class NotificationController extends Controller
+{
+    /**
+     * Get the unread notifications for the user.
+     */
+    public function unread(Request $request): JsonResponse
+    {
+        $notifications = $request->user()->unreadNotifications()->latest()->take(10)->get();
+        return response()->json([
+            'notifications' => $notifications,
+            'unread_count' => $request->user()->unreadNotifications()->count(),
+        ]);
+    }
+
+    /**
+     * Mark a specific notification as read.
+     */
+    public function markAsRead(Request $request, $id): JsonResponse
+    {
+        $notification = $request->user()->notifications()->findOrFail($id);
+        $notification->markAsRead();
+        return response()->json(['status' => 'success']);
+    }
+
+    /**
+     * Mark all notifications as read.
+     */
+    public function markAllAsRead(Request $request): JsonResponse
+    {
+        $request->user()->unreadNotifications->markAsRead();
+        return response()->json(['status' => 'success']);
+    }
+}

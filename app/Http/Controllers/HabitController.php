@@ -17,7 +17,7 @@ class HabitController extends Controller
     /**
      * Display the habit dashboard.
      */
-    public function index(Request $request): Response
+    public function dashboard(Request $request): Response
     {
         Gate::authorize('viewAny', Habit::class);
 
@@ -54,6 +54,36 @@ class HabitController extends Controller
             ->get();
 
         return Inertia::render('dashboard', [
+            'habits' => $habits,
+        ]);
+    }
+
+    /**
+     * Display a listing of the habits.
+     */
+    public function index(Request $request): Response
+    {
+        Gate::authorize('viewAny', Habit::class);
+
+        $habits = $request->user()
+            ->habits()
+            ->select([
+                'id',
+                'name',
+                'description',
+                'category',
+                'target_value',
+                'unit',
+                'frequency',
+                'days_of_week',
+                'is_active',
+                'start_date',
+            ])
+            ->withCount('completions')
+            ->latest('id')
+            ->get();
+
+        return Inertia::render('habits/index', [
             'habits' => $habits,
         ]);
     }
@@ -115,5 +145,80 @@ class HabitController extends Controller
         ]);
 
         return to_route('dashboard');
+    }
+
+    /**
+     * Toggle the completion status of the habit for today.
+     */
+    public function toggle(Request $request, Habit $habit): RedirectResponse
+    {
+        Gate::authorize('update', $habit);
+
+        $today = today();
+        
+        $completion = $habit->completions()
+            ->whereDate('completed_on', $today)
+            ->first();
+
+        if ($completion) {
+            $completion->delete();
+            $message = __('Habit marked as incomplete.');
+        } else {
+            $habit->completions()->create([
+                'completed_on' => $today,
+                'value' => $habit->target_value ?? '1',
+            ]);
+            $message = __('Habit completed!');
+        }
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => $message,
+        ]);
+
+        return back();
+    }
+
+    /**
+     * Display the analytics page.
+     */
+    public function analytics(Request $request): Response
+    {
+        Gate::authorize('viewAny', Habit::class);
+
+        $habits = $request->user()
+            ->habits()
+            ->select([
+                'id',
+                'name',
+                'description',
+                'category',
+                'target_value',
+                'unit',
+                'frequency',
+                'days_of_week',
+                'is_active',
+                'start_date',
+            ])
+            ->with([
+                'completions' => fn (HasMany $query) => $query
+                    ->select([
+                        'id',
+                        'habit_id',
+                        'completed_on',
+                        'value',
+                        'note',
+                    ])
+                    ->whereBetween('completed_on', [
+                        today()->subDays(30),
+                        today()->endOfDay(),
+                    ])
+                    ->oldest('completed_on'),
+            ])
+            ->get();
+
+        return Inertia::render('analytics', [
+            'habits' => $habits,
+        ]);
     }
 }
