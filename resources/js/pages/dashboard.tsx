@@ -31,7 +31,7 @@ export default function Dashboard({ habits = [] }: { habits?: Habit[] }) {
     const { auth } = usePage<{ auth: Auth }>().props;
     
     // Menghitung tanggal hari ini dengan format YYYY-MM-DD
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toLocaleDateString('en-CA');
 
     // Fungsi bantuan untuk mengecek apakah habit sudah diselesaikan hari ini
     const isCompletedToday = (habit: Habit) => {
@@ -93,6 +93,13 @@ export default function Dashboard({ habits = [] }: { habits?: Habit[] }) {
                                                 <div className="flex space-x-2 mt-1">
                                                     {habit.category && (
                                                         <span className="px-2 py-1 rounded-full bg-blue-500/10 text-blue-500 text-xs font-medium">
+                                                            {habit.category === 'Health' ? '🍏 ' :
+                                                             habit.category === 'Mind' ? '🧠 ' :
+                                                             habit.category === 'Productivity' ? '🚀 ' :
+                                                             habit.category === 'Finance' ? '💰 ' :
+                                                             habit.category === 'Fitness' ? '🏃 ' :
+                                                             habit.category === 'Social' ? '🤝 ' :
+                                                             '📌 '}
                                                             {habit.category}
                                                         </span>
                                                     )}
@@ -147,7 +154,7 @@ export default function Dashboard({ habits = [] }: { habits?: Habit[] }) {
                                     // Let's do a sliding window of the last 7 days ending today
                                     const d = new Date();
                                     d.setDate(d.getDate() - (6 - i));
-                                    const dateString = d.toISOString().split('T')[0];
+                                    const dateString = d.toLocaleDateString('en-CA');
                                     const dayName = d.toLocaleDateString('en-US', { weekday: 'short' }).charAt(0);
                                     const dayOfWeekNum = d.getDay(); // 0 (Sun) to 6 (Sat)
                                     const isToday = i === 6;

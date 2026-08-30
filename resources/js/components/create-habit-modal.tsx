@@ -82,12 +82,21 @@ export function CreateHabitModal({ children }: { children?: React.ReactNode }) {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="category">Category</Label>
-                            <Input
+                            <select
                                 id="category"
                                 value={data.category}
                                 onChange={(e) => setData('category', e.target.value)}
-                                placeholder="e.g. Health, Learning"
-                            />
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            >
+                                <option value="" disabled>Select Category</option>
+                                <option value="Health">Health 🍏</option>
+                                <option value="Mind">Mind 🧠</option>
+                                <option value="Productivity">Productivity 🚀</option>
+                                <option value="Finance">Finance 💰</option>
+                                <option value="Fitness">Fitness 🏃</option>
+                                <option value="Social">Social 🤝</option>
+                                <option value="General">General 📌</option>
+                            </select>
                             {errors.category && <p className="text-sm text-destructive">{errors.category}</p>}
                         </div>
                         <div className="space-y-2">

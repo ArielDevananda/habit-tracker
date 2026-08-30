@@ -32,9 +32,20 @@ class HabitReminderNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        // For now, only store it in the database (in-app).
-        // Later we can add 'webpush' or 'mail'
-        return ['database'];
+        return ['database', \NotificationChannels\WebPush\WebPushChannel::class];
+    }
+
+    /**
+     * Get the web push representation of the notification.
+     */
+    public function toWebPush($notifiable, $notification)
+    {
+        return (new \NotificationChannels\WebPush\WebPushMessage)
+            ->title('Habit Reminder')
+            ->icon('/apple-touch-icon.png')
+            ->body($this->message)
+            ->action('View Dashboard', $this->url)
+            ->data(['url' => $this->url]);
     }
 
     /**

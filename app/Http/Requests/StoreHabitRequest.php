@@ -39,7 +39,7 @@ class StoreHabitRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:100'],
             'description' => ['nullable', 'string', 'max:1000'],
-            'category' => ['nullable', 'string', 'max:50'],
+            'category' => ['nullable', 'string', Rule::in(['Health', 'Mind', 'Productivity', 'Finance', 'Fitness', 'Social', 'General'])],
 
             'target_value' => [
                 'nullable',

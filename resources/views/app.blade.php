@@ -33,6 +33,24 @@
         <link rel="icon" href="/favicon.ico" sizes="any">
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        
+        {{-- PWA Manifest and Theme Color --}}
+        <link rel="manifest" href="/manifest.json">
+        <meta name="theme-color" content="#16a34a">
+        <meta name="vapid-public-key" content="{{ config('webpush.vapid.public_key') }}">
+
+        {{-- Service Worker Registration --}}
+        <script>
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    }, function(err) {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+                });
+            }
+        </script>
 
         @fonts
 

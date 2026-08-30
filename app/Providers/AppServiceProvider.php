@@ -15,7 +15,25 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->extend(\Minishlink\WebPush\WebPush::class, function ($webPush, $app) {
+            $client = new \GuzzleHttp\Client(['verify' => false]);
+            $webPush->setReuseVAPIDHeaders(true); // Optional optimization
+            // For WebPush v11, we need to pass a custom HTTP client
+            // Actually, WebPush constructor accepts custom client options, but since it's already instantiated,
+            // we can just set a new client if the method exists, or re-instantiate it.
+            // In v11, WebPush uses an HTTP factory, but let's just use Guzzle.
+            return new \Minishlink\WebPush\WebPush(
+                [
+                    'VAPID' => [
+                        'subject' => config('webpush.vapid.subject'),
+                        'publicKey' => config('webpush.vapid.public_key'),
+                        'privateKey' => config('webpush.vapid.private_key')
+                    ]
+                ],
+                [],
+                new \GuzzleHttp\Client(['verify' => false])
+            );
+        });
     }
 
     /**

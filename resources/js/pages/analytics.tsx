@@ -1,7 +1,7 @@
 import { Head, usePage } from '@inertiajs/react';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Flame, Award, Activity } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -38,7 +38,7 @@ export default function Analytics() {
         };
 
         const getHabitCompletion = (habit: any, dateStr: string) => {
-            return habit.completions?.find((c: any) => c.completed_on?.split('T')[0] === dateStr);
+            return habit.completions?.find((c: any) => (c.completed_on ? new Date(c.completed_on).toLocaleDateString('en-CA') : '') === dateStr);
         };
 
         // 1. Calculate Score over last 30 days
@@ -52,7 +52,7 @@ export default function Analytics() {
         }
 
         past30Dates.forEach(date => {
-            const dateStr = date.toISOString().split('T')[0];
+            const dateStr = date.toLocaleDateString('en-CA');
             habits.forEach(habit => {
                 if (isHabitRequiredOnDate(habit, date)) {
                     totalRequired30++;
@@ -70,7 +70,7 @@ export default function Analytics() {
         for (let i = 0; i < 30; i++) {
             const d = new Date(today);
             d.setDate(d.getDate() - i);
-            const dateStr = d.toISOString().split('T')[0];
+            const dateStr = d.toLocaleDateString('en-CA');
             
             let reqCount = 0;
             let compCount = 0;
@@ -92,67 +92,65 @@ export default function Analytics() {
         }
         streak = currentStreak;
 
-        // 3. Completion Over Time (Last 7 Days)
-        last7DaysScores = past30Dates.slice(-7).map(date => {
-            const dateStr = date.toISOString().split('T')[0];
+        // 3. Completion Over Time (dynamic timeframe)
+        // We will calculate for all 30 days, then slice in the render phase
+        const all30DaysScores = past30Dates.map(date => {
+            const dateStr = date.toLocaleDateString('en-CA');
             let req = 0;
             let comp = 0;
             habits.forEach(habit => {
                 if (isHabitRequiredOnDate(habit, date)) {
                     req++;
-                    if (getHabitCompletion(habit, dateStr)) {
-                        comp++;
-                    }
+                    if (getHabitCompletion(habit, dateStr)) comp++;
                 }
             });
             return {
                 day: date.toLocaleDateString('en-US', { weekday: 'short' }),
+                date: date.getDate(),
                 score: req > 0 ? Math.round((comp / req) * 100) : 0
             };
         });
 
-        // 4. Heatmap (Last 21 Days)
-        heatmapData = past30Dates.slice(-21).map(date => {
-            const dateStr = date.toISOString().split('T')[0];
+        last7DaysScores = all30DaysScores; // We'll rename and slice this in the component body
+
+        // 4. Heatmap Data (Last 28 Days for a 4x7 grid usually, or just 30 days)
+        // Let's take last 28 days to fit perfectly in a 7-column grid
+        heatmapData = all30DaysScores.slice(-28).map(d => d.score);
+
+        // 5. Category Breakdown (30 Days)
+        const catMap = new Map();
+        habits.forEach(habit => {
+            if (!habit.category) return;
             let req = 0;
             let comp = 0;
-            habits.forEach(habit => {
+            past30Dates.forEach(date => {
+                const dateStr = date.toLocaleDateString('en-CA');
                 if (isHabitRequiredOnDate(habit, date)) {
                     req++;
-                    if (getHabitCompletion(habit, dateStr)) {
-                        comp++;
-                    }
+                    if (getHabitCompletion(habit, dateStr)) comp++;
                 }
             });
-            return req > 0 ? Math.round((comp / req) * 100) : 0;
-        });
-
-        // 5. Category Breakdown (Last 30 Days)
-        const categoryMap: Record<string, { req: number, comp: number }> = {};
-        habits.forEach(habit => {
-            const cat = habit.category || 'Uncategorized';
-            if (!categoryMap[cat]) categoryMap[cat] = { req: 0, comp: 0 };
             
-            past30Dates.forEach(date => {
-                if (isHabitRequiredOnDate(habit, date)) {
-                    categoryMap[cat].req++;
-                    const dateStr = date.toISOString().split('T')[0];
-                    if (getHabitCompletion(habit, dateStr)) {
-                        categoryMap[cat].comp++;
-                    }
-                }
-            });
+            if (req > 0) {
+                if (!catMap.has(habit.category)) catMap.set(habit.category, { req: 0, comp: 0 });
+                const current = catMap.get(habit.category);
+                current.req += req;
+                current.comp += comp;
+            }
         });
-
-        categoryScores = Object.entries(categoryMap).map(([name, data]) => ({
+        
+        categoryScores = Array.from(catMap.entries()).map(([name, data]) => ({
             name,
-            score: data.req > 0 ? Math.round((data.comp / data.req) * 100) : 0
+            score: Math.round((data.comp / data.req) * 100)
         })).sort((a, b) => b.score - a.score);
 
     } catch (e: any) {
         errorMessage = e.message;
         errorStack = e.stack;
     }
+
+    const [timeframe, setTimeframe] = useState<7 | 14 | 30>(7);
+    const chartScores = last7DaysScores.slice(-timeframe);
 
     if (errorMessage) {
         return (
@@ -245,8 +243,14 @@ export default function Analytics() {
                     <div className="lg:col-span-2 bg-card border border-border rounded-xl p-6 shadow-sm flex flex-col">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-lg font-semibold text-foreground">Completion Over Time</h3>
-                            <select className="bg-muted border-none text-sm font-medium text-foreground rounded-lg focus:ring-2 focus:ring-primary" disabled>
-                                <option>Last 7 Days</option>
+                            <select 
+                                value={timeframe} 
+                                onChange={(e) => setTimeframe(Number(e.target.value) as 7 | 14 | 30)}
+                                className="bg-muted border-none text-sm font-medium text-foreground rounded-lg focus:ring-2 focus:ring-primary cursor-pointer"
+                            >
+                                <option value={7}>Last 7 Days</option>
+                                <option value={14}>Last 14 Days</option>
+                                <option value={30}>Last 30 Days</option>
                             </select>
                         </div>
 
@@ -268,7 +272,7 @@ export default function Analytics() {
 
                             {/* Data Points */}
                             <div className="relative w-full h-full flex items-end justify-between px-4 z-10">
-                                {last7DaysScores.map((data, i) => (
+                                {chartScores.map((data, i) => (
                                     <div key={i} className={`w-3 rounded-t-full relative group transition-colors ${data.score >= 90 ? 'bg-primary shadow-[0_0_10px_var(--color-primary)]' : (data.score > 0 ? 'bg-primary/50 hover:bg-primary' : 'bg-muted')}`} style={{ height: `${Math.max(data.score, 5)}%` }}>
                                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-foreground text-background text-xs px-2 py-1 rounded whitespace-nowrap z-20">
                                             {data.score}%
@@ -280,8 +284,10 @@ export default function Analytics() {
 
                         {/* X-Axis Labels */}
                         <div className="flex justify-between text-xs text-muted-foreground mt-2 px-6">
-                            {last7DaysScores.map((data, i) => (
-                                <span key={i}>{data.day}</span>
+                            {chartScores.map((data, i) => (
+                                <span key={i} className="text-[10px] sm:text-xs">
+                                    {timeframe === 30 && i % 3 !== 0 ? '' : (timeframe > 7 ? data.date : data.day)}
+                                </span>
                             ))}
                         </div>
                     </div>

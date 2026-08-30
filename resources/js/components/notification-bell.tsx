@@ -26,12 +26,19 @@ interface NotificationData {
 export function NotificationBell() {
     const [notifications, setNotifications] = useState<NotificationData[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [isPushEnabled, setIsPushEnabled] = useState(false);
 
     useEffect(() => {
         fetchNotifications();
         
         // Polling every 60 seconds (optional)
         const interval = setInterval(fetchNotifications, 60000);
+        
+        // Check initial push status
+        if ('Notification' in window && Notification.permission === 'granted') {
+            setIsPushEnabled(true);
+        }
+
         return () => clearInterval(interval);
     }, []);
 
@@ -72,6 +79,54 @@ export function NotificationBell() {
         }
     };
 
+    const urlBase64ToUint8Array = (base64String: string) => {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    };
+
+    const subscribeToPush = async () => {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+        
+        try {
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') {
+                alert('Notification permission denied.');
+                return;
+            }
+
+            const registration = await navigator.serviceWorker.ready;
+            const vapidPublicKey = document.querySelector('meta[name="vapid-public-key"]')?.getAttribute('content');
+            if (!vapidPublicKey) return;
+
+            const subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+            });
+
+            const key = subscription.getKey('p256dh');
+            const token = subscription.getKey('auth');
+
+            await axios.post('/api/push-subscribe', {
+                endpoint: subscription.endpoint,
+                keys: {
+                    p256dh: key ? btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(key)))) : '',
+                    auth: token ? btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(token)))) : ''
+                }
+            });
+
+            setIsPushEnabled(true);
+            alert('Push notifications enabled!');
+        } catch (error) {
+            console.error('Push subscription failed:', error);
+        }
+    };
+
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -86,11 +141,13 @@ export function NotificationBell() {
             <DropdownMenuContent align="end" className="w-80 p-0">
                 <div className="flex items-center justify-between px-4 py-3 bg-muted/30">
                     <h4 className="font-semibold text-sm">Notifications</h4>
-                    {unreadCount > 0 && (
-                        <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-primary hover:text-primary/80" onClick={markAllAsRead}>
-                            Mark all as read
-                        </Button>
-                    )}
+                    <div className="flex items-center gap-2">
+                        {unreadCount > 0 && (
+                            <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-primary hover:text-primary/80" onClick={markAllAsRead}>
+                                Mark read
+                            </Button>
+                        )}
+                    </div>
                 </div>
                 <DropdownMenuSeparator className="m-0" />
                 
@@ -129,6 +186,14 @@ export function NotificationBell() {
                         </div>
                     )}
                 </div>
+                
+                {!isPushEnabled && (
+                    <div className="p-2 bg-muted/20 border-t border-border flex justify-center">
+                        <Button variant="outline" size="sm" className="w-full text-xs" onClick={subscribeToPush}>
+                            Enable Push Notifications
+                        </Button>
+                    </div>
+                )}
             </DropdownMenuContent>
         </DropdownMenu>
     );

@@ -1,8 +1,19 @@
+import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import { Edit, Trash2, Clock, Activity, Book, Flame } from 'lucide-react';
 import { EditHabitModal } from '@/components/edit-habit-modal';
 
 export default function HabitsIndex({ habits = [] }: { habits?: any[] }) {
+    const [activeFilter, setActiveFilter] = useState('All Active');
+    
+    // Get unique categories from the user's habits (ignoring null/empty)
+    const availableCategories = Array.from(new Set(habits.map(h => h.category).filter(Boolean)));
+    
+    // Filter habits based on selected category
+    const filteredHabits = activeFilter === 'All Active' 
+        ? habits 
+        : habits.filter(h => h.category === activeFilter);
+
     return (
         <>
             <Head title="My Habits" />
@@ -15,10 +26,21 @@ export default function HabitsIndex({ habits = [] }: { habits?: any[] }) {
                 {/* Toolbar */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                     <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto snap-x hide-scrollbar">
-                        <button className="snap-start shrink-0 px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-sm font-medium shadow-sm transition-transform active:scale-95">All Active</button>
-                        <button className="snap-start shrink-0 px-4 py-1.5 rounded-full bg-card border border-border text-muted-foreground text-sm font-medium hover:bg-muted transition-all active:scale-95">Health</button>
-                        <button className="snap-start shrink-0 px-4 py-1.5 rounded-full bg-card border border-border text-muted-foreground text-sm font-medium hover:bg-muted transition-all active:scale-95">Mind</button>
-                        <button className="snap-start shrink-0 px-4 py-1.5 rounded-full bg-card border border-border text-muted-foreground text-sm font-medium hover:bg-muted transition-all active:scale-95">Productivity</button>
+                        <button 
+                            onClick={() => setActiveFilter('All Active')}
+                            className={`snap-start shrink-0 px-4 py-1.5 rounded-full text-sm font-medium shadow-sm transition-all active:scale-95 ${activeFilter === 'All Active' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground hover:bg-muted'}`}
+                        >
+                            All Active
+                        </button>
+                        {availableCategories.map((cat: any) => (
+                            <button 
+                                key={cat}
+                                onClick={() => setActiveFilter(cat)}
+                                className={`snap-start shrink-0 px-4 py-1.5 rounded-full text-sm font-medium shadow-sm transition-all active:scale-95 ${activeFilter === cat ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground hover:bg-muted'}`}
+                            >
+                                {cat}
+                            </button>
+                        ))}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sort by:</span>
@@ -32,12 +54,12 @@ export default function HabitsIndex({ habits = [] }: { habits?: any[] }) {
 
                 {/* Bento Grid / Cards List */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {habits.length === 0 ? (
+                    {filteredHabits.length === 0 ? (
                         <div className="col-span-full bg-card rounded-xl p-8 border border-border border-dashed flex flex-col items-center justify-center text-center">
                             <p className="text-muted-foreground mb-4">No habits found.</p>
                         </div>
                     ) : (
-                        habits.map((habit) => (
+                        filteredHabits.map((habit: any) => (
                             <article key={habit.id} className="bg-card rounded-xl p-6 shadow-sm flex flex-col sm:flex-row gap-6 relative group border border-border hover:-translate-y-0.5 hover:shadow-md transition-all">
                                 {/* Actions Menu (Hover) */}
                                 <div className="absolute top-4 right-4 opacity-0 sm:group-hover:opacity-100 transition-opacity flex gap-2">
@@ -56,10 +78,14 @@ export default function HabitsIndex({ habits = [] }: { habits?: any[] }) {
                                 </div>
                                 <div className="flex-1">
                                     <div className="flex items-center gap-3 mb-2">
-                                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                                            {habit.category?.toLowerCase() === 'health' ? <Activity className="w-5 h-5" /> :
-                                             habit.category?.toLowerCase() === 'mind' ? <Clock className="w-5 h-5" /> :
-                                             <Book className="w-5 h-5" />}
+                                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                                            {habit.category === 'Health' ? <span className="text-xl">🍏</span> :
+                                             habit.category === 'Mind' ? <span className="text-xl">🧠</span> :
+                                             habit.category === 'Productivity' ? <span className="text-xl">🚀</span> :
+                                             habit.category === 'Finance' ? <span className="text-xl">💰</span> :
+                                             habit.category === 'Fitness' ? <span className="text-xl">🏃</span> :
+                                             habit.category === 'Social' ? <span className="text-xl">🤝</span> :
+                                             <span className="text-xl">📌</span>}
                                         </div>
                                         <div>
                                             <h3 className="text-xl font-bold text-foreground leading-tight">{habit.name}</h3>
