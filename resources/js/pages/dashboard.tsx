@@ -1,7 +1,7 @@
 import { Head, usePage, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { dashboard } from '@/routes';
-import { Flame, MoreHorizontal, CheckCircle2, Plus } from 'lucide-react';
+import { Flame, CheckCircle2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CreateHabitModal } from '@/components/create-habit-modal';
 import type { Auth } from '@/types/auth';
@@ -45,8 +45,35 @@ export default function Dashboard({ habits = [] }: { habits?: Habit[] }) {
 
     const isCompletedToday = (habit: any) => isCompletedOnDate(habit, selectedDate);
 
-    const completedCount = habits.filter(isCompletedToday).length;
-    const totalCount = habits.length;
+    // Helper to check if a habit should be done on a specific date string (YYYY-MM-DD)
+    const isHabitTargetedForDate = (habit: any, dateStr: string) => {
+        if (!habit.is_active) return false;
+        
+        // Ensure habit has started
+        const habitStartDate = habit.start_date ? habit.start_date.split('T')[0] : '';
+        if (habitStartDate > dateStr) return false;
+        
+        if (habit.frequency === 'daily') return true;
+        
+        if (habit.frequency === 'weekly' && habit.days_of_week) {
+            // Get day of week (0-6) for the target date
+            // Note: parsing 'YYYY-MM-DD' directly can cause timezone shifts if not careful.
+            // Using new Date(dateStr + 'T00:00:00') ensures local timezone parsing.
+            const targetDateObj = new Date(dateStr + 'T00:00:00');
+            const dayOfWeekNum = targetDateObj.getDay();
+            
+            // Check if days_of_week contains this day (needs to handle string or int depending on cast)
+            // Sometimes it comes from JSON as strings, sometimes ints.
+            return habit.days_of_week.some((d: any) => String(d) === String(dayOfWeekNum));
+        }
+        
+        return false;
+    };
+
+    const activeHabitsForSelectedDate = habits.filter(h => isHabitTargetedForDate(h, selectedDate));
+
+    const completedCount = activeHabitsForSelectedDate.filter(isCompletedToday).length;
+    const totalCount = activeHabitsForSelectedDate.length;
     const progressPercentage = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
     
     // Perhitungan untuk lingkaran SVG
@@ -91,13 +118,13 @@ export default function Dashboard({ habits = [] }: { habits?: Habit[] }) {
                             </div>
                         </div>
                         
-                        {habits.length === 0 ? (
+                        {activeHabitsForSelectedDate.length === 0 ? (
                             <div className="bg-card rounded-xl p-8 border border-border border-dashed flex flex-col items-center justify-center text-center">
-                                <p className="text-muted-foreground mb-4">You haven't set up any habits yet.</p>
+                                <p className="text-muted-foreground mb-4">No habits scheduled for this day.</p>
                                 <CreateHabitModal />
                             </div>
                         ) : (
-                            habits.map((habit) => {
+                            activeHabitsForSelectedDate.map((habit) => {
                                 const completed = isCompletedToday(habit);
                                 return (
                                     <div key={habit.id} className={`bg-card rounded-xl p-4 md:p-6 shadow-sm border border-border flex items-center justify-between border-l-4 transition-colors ${completed ? 'border-l-primary' : 'border-l-transparent hover:border-l-border'}`}>
@@ -176,19 +203,7 @@ export default function Dashboard({ habits = [] }: { habits?: Habit[] }) {
                                     const isToday = i === 6;
 
                                     // Hitung target habits untuk hari ini
-                                    const targetHabits = habits.filter(h => {
-                                        if (!h.is_active) return false;
-                                        
-                                        // Pastikan membandingkan hanya format YYYY-MM-DD
-                                        const habitStartDate = h.start_date ? h.start_date.split('T')[0] : '';
-                                        if (habitStartDate > dateString) return false; // Belum mulai
-                                        
-                                        if (h.frequency === 'daily') return true;
-                                        if (h.frequency === 'weekly' && h.days_of_week) {
-                                            return h.days_of_week.includes(dayOfWeekNum);
-                                        }
-                                        return false;
-                                    });
+                                    const targetHabits = habits.filter(h => isHabitTargetedForDate(h, dateString));
 
                                     const dayTotal = targetHabits.length;
                                     const dayCompleted = targetHabits.filter(h => 

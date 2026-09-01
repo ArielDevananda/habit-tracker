@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Head, router, Link } from '@inertiajs/react';
-import { Edit, Trash2, Clock, Activity, Book, Flame } from 'lucide-react';
+import { Trash2, Flame } from 'lucide-react';
 import { EditHabitModal } from '@/components/edit-habit-modal';
+import { DeleteHabitModal } from '@/components/delete-habit-modal';
 
 export default function HabitsIndex({ habits = [] }: { habits?: any[] }) {
     const [activeFilter, setActiveFilter] = useState('All Active');
@@ -82,19 +83,9 @@ export default function HabitsIndex({ habits = [] }: { habits?: any[] }) {
                             <Link key={habit.id} href={`/habits/${habit.id}`} className="block">
                             <article className="bg-card rounded-xl p-6 shadow-sm flex flex-col sm:flex-row gap-6 relative group border border-border hover:-translate-y-0.5 hover:shadow-md transition-all cursor-pointer">
                                 {/* Actions Menu (Hover) */}
-                                <div className="absolute top-4 right-4 opacity-0 sm:group-hover:opacity-100 transition-opacity flex gap-2">
+                                <div className="absolute top-4 right-4 opacity-0 sm:group-hover:opacity-100 transition-opacity flex gap-2" onClick={(e) => e.preventDefault()}>
                                     <EditHabitModal habit={habit} />
-                                    <button 
-                                        className="p-1.5 rounded-full hover:bg-destructive/10 text-destructive transition-colors" 
-                                        title="Delete"
-                                        onClick={() => {
-                                            if (confirm('Are you sure you want to delete this habit?')) {
-                                                router.delete(`/habits/${habit.id}`);
-                                            }
-                                        }}
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
+                                    <DeleteHabitModal habit={habit} />
                                 </div>
                                 <div className="flex-1">
                                     <div className="flex items-center gap-3 mb-2">

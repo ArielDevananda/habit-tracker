@@ -3,6 +3,7 @@ import Heading from '@/components/heading';
 import { Label } from '@/components/ui/label';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { toast } from 'sonner';
 
 export default function Notifications() {
     const [isPushEnabled, setIsPushEnabled] = useState(false);
@@ -38,7 +39,7 @@ export default function Notifications() {
             try {
                 const permission = await Notification.requestPermission();
                 if (permission !== 'granted') {
-                    alert('Notification permission denied. Please enable it in your browser settings.');
+                    toast.error('Notification permission denied. Please enable it in your browser settings.');
                     setIsLoading(false);
                     return;
                 }
@@ -70,7 +71,7 @@ export default function Notifications() {
                 setIsPushEnabled(true);
             } catch (error) {
                 console.error('Push subscription failed:', error);
-                alert('Failed to enable notifications.');
+                toast.error('Failed to enable notifications.');
             }
         } else {
             // Disable Push Notifications
@@ -86,7 +87,7 @@ export default function Notifications() {
                 setIsPushEnabled(false);
             } catch (error) {
                 console.error('Unsubscribe failed:', error);
-                alert('Failed to disable notifications.');
+                toast.error('Failed to disable notifications.');
             }
         }
 

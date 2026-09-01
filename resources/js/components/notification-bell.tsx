@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import axios from 'axios';
 import { Link } from '@inertiajs/react';
+import { toast } from 'sonner';
 
 interface NotificationData {
     id: string;
@@ -96,7 +97,7 @@ export function NotificationBell() {
         try {
             const permission = await Notification.requestPermission();
             if (permission !== 'granted') {
-                alert('Notification permission denied.');
+                toast.error('Notification permission denied.');
                 return;
             }
 
@@ -121,7 +122,7 @@ export function NotificationBell() {
             });
 
             setIsPushEnabled(true);
-            alert('Push notifications enabled!');
+            toast.success('Push notifications enabled!');
         } catch (error) {
             console.error('Push subscription failed:', error);
         }
