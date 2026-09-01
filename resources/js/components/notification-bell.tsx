@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface NotificationData {
     id: string;
@@ -32,17 +32,17 @@ export function NotificationBell() {
             setNotifications(res.data.notifications);
             setUnreadCount(res.data.unread_count);
         } catch (error) {
-            console.error("Failed to fetch notifications", error);
+            console.error('Failed to fetch notifications', error);
         }
     };
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         fetchNotifications();
-        
+
         // Polling every 60 seconds (optional)
         const interval = setInterval(fetchNotifications, 60000);
-        
+
         // Check initial push status
         if ('Notification' in window && Notification.permission === 'granted') {
             setIsPushEnabled(true);
@@ -58,12 +58,16 @@ export function NotificationBell() {
         try {
             await axios.post(`/api/notifications/${id}/read`);
             // Update local state
-            setNotifications(notifications.map(n => 
-                n.id === id ? { ...n, read_at: new Date().toISOString() } : n
-            ));
-            setUnreadCount(prev => Math.max(0, prev - 1));
+            setNotifications(
+                notifications.map((n) =>
+                    n.id === id
+                        ? { ...n, read_at: new Date().toISOString() }
+                        : n,
+                ),
+            );
+            setUnreadCount((prev) => Math.max(0, prev - 1));
         } catch (error) {
-            console.error("Failed to mark notification as read", error);
+            console.error('Failed to mark notification as read', error);
         }
     };
 
@@ -73,16 +77,23 @@ export function NotificationBell() {
 
         try {
             await axios.post('/api/notifications/read-all');
-            setNotifications(notifications.map(n => ({ ...n, read_at: new Date().toISOString() })));
+            setNotifications(
+                notifications.map((n) => ({
+                    ...n,
+                    read_at: new Date().toISOString(),
+                })),
+            );
             setUnreadCount(0);
         } catch (error) {
-            console.error("Failed to mark all as read", error);
+            console.error('Failed to mark all as read', error);
         }
     };
 
     const urlBase64ToUint8Array = (base64String: string) => {
-        const padding = '='.repeat((4 - base64String.length % 4) % 4);
-        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+        const base64 = (base64String + padding)
+            .replace(/-/g, '+')
+            .replace(/_/g, '/');
         const rawData = window.atob(base64);
         const outputArray = new Uint8Array(rawData.length);
 
@@ -95,9 +106,9 @@ export function NotificationBell() {
 
     const subscribeToPush = async () => {
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-return;
-}
-        
+            return;
+        }
+
         try {
             const permission = await Notification.requestPermission();
 
@@ -108,11 +119,13 @@ return;
             }
 
             const registration = await navigator.serviceWorker.ready;
-            const vapidPublicKey = document.querySelector('meta[name="vapid-public-key"]')?.getAttribute('content');
+            const vapidPublicKey = document
+                .querySelector('meta[name="vapid-public-key"]')
+                ?.getAttribute('content');
 
             if (!vapidPublicKey) {
-return;
-}
+                return;
+            }
 
             const subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
@@ -125,9 +138,23 @@ return;
             await axios.post('/api/push-subscribe', {
                 endpoint: subscription.endpoint,
                 keys: {
-                    p256dh: key ? btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(key)))) : '',
-                    auth: token ? btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(token)))) : ''
-                }
+                    p256dh: key
+                        ? btoa(
+                              String.fromCharCode.apply(
+                                  null,
+                                  Array.from(new Uint8Array(key)),
+                              ),
+                          )
+                        : '',
+                    auth: token
+                        ? btoa(
+                              String.fromCharCode.apply(
+                                  null,
+                                  Array.from(new Uint8Array(token)),
+                              ),
+                          )
+                        : '',
+                },
             });
 
             setIsPushEnabled(true);
@@ -140,27 +167,36 @@ return;
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground rounded-full">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative rounded-full text-muted-foreground hover:text-foreground"
+                >
                     <Bell className="h-5 w-5" />
                     {unreadCount > 0 && (
                         <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-background" />
                     )}
                 </Button>
             </DropdownMenuTrigger>
-            
+
             <DropdownMenuContent align="end" className="w-80 p-0">
-                <div className="flex items-center justify-between px-4 py-3 bg-muted/30">
-                    <h4 className="font-semibold text-sm">Notifications</h4>
+                <div className="flex items-center justify-between bg-muted/30 px-4 py-3">
+                    <h4 className="text-sm font-semibold">Notifications</h4>
                     <div className="flex items-center gap-2">
                         {unreadCount > 0 && (
-                            <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-primary hover:text-primary/80" onClick={markAllAsRead}>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-auto p-0 text-xs text-primary hover:text-primary/80"
+                                onClick={markAllAsRead}
+                            >
                                 Mark read
                             </Button>
                         )}
                     </div>
                 </div>
                 <DropdownMenuSeparator className="m-0" />
-                
+
                 <div className="max-h-[300px] overflow-y-auto">
                     {notifications.length === 0 ? (
                         <div className="px-4 py-8 text-center text-sm text-muted-foreground">
@@ -169,37 +205,54 @@ return;
                     ) : (
                         <div className="flex flex-col pb-2">
                             {notifications.map((notification) => (
-                                <div 
-                                    key={notification.id} 
-                                    className={`relative flex flex-col gap-1 px-4 py-3 border-b border-border/50 transition-colors hover:bg-muted/50 ${!notification.read_at ? 'bg-primary/5' : ''}`}
+                                <div
+                                    key={notification.id}
+                                    className={`relative flex flex-col gap-1 border-b border-border/50 px-4 py-3 transition-colors hover:bg-muted/50 ${!notification.read_at ? 'bg-primary/5' : ''}`}
                                 >
                                     <div className="flex justify-between gap-4">
-                                        <p className="text-sm text-foreground/90 leading-tight">
+                                        <p className="text-sm leading-tight text-foreground/90">
                                             {notification.data.message}
                                         </p>
                                         {!notification.read_at && (
-                                            <Button 
-                                                variant="ghost" 
-                                                size="icon" 
-                                                className="h-5 w-5 shrink-0 rounded-full hover:bg-primary/20 hover:text-primary" 
-                                                onClick={(e) => markAsRead(notification.id, e)}
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-5 w-5 shrink-0 rounded-full hover:bg-primary/20 hover:text-primary"
+                                                onClick={(e) =>
+                                                    markAsRead(
+                                                        notification.id,
+                                                        e,
+                                                    )
+                                                }
                                             >
                                                 <Check className="h-3 w-3" />
                                             </Button>
                                         )}
                                     </div>
-                                    <span className="text-xs text-muted-foreground mt-1">
-                                        {new Date(notification.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                    <span className="mt-1 text-xs text-muted-foreground">
+                                        {new Date(
+                                            notification.created_at,
+                                        ).toLocaleDateString('en-US', {
+                                            month: 'short',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                        })}
                                     </span>
                                 </div>
                             ))}
                         </div>
                     )}
                 </div>
-                
+
                 {!isPushEnabled && (
-                    <div className="p-2 bg-muted/20 border-t border-border flex justify-center">
-                        <Button variant="outline" size="sm" className="w-full text-xs" onClick={subscribeToPush}>
+                    <div className="flex justify-center border-t border-border bg-muted/20 p-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full text-xs"
+                            onClick={subscribeToPush}
+                        >
                             Enable Push Notifications
                         </Button>
                     </div>

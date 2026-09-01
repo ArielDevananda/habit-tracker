@@ -14,7 +14,7 @@ export function AppSidebarHeader({
                 <SidebarTrigger className="-ml-1" />
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             </div>
-            
+
             <div className="flex items-center">
                 <NotificationBell />
             </div>

@@ -2,7 +2,15 @@ import { useForm } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -19,16 +27,17 @@ const DAYS = [
 export function CreateHabitModal({ children }: { children?: React.ReactNode }) {
     const [open, setOpen] = useState(false);
 
-    const { data, setData, post, processing, errors, reset, transform } = useForm({
-        name: '',
-        category: '',
-        type: 'binary',
-        frequency: 'daily',
-        days_of_week: [] as number[],
-        target_value: '',
-        unit: '',
-        start_date: new Date().toLocaleDateString('en-CA'),
-    });
+    const { data, setData, post, processing, errors, reset, transform } =
+        useForm({
+            name: '',
+            category: '',
+            type: 'binary',
+            frequency: 'daily',
+            days_of_week: [] as number[],
+            target_value: '',
+            unit: '',
+            start_date: new Date().toLocaleDateString('en-CA'),
+        });
 
     transform((data) => ({
         ...data,
@@ -49,7 +58,10 @@ export function CreateHabitModal({ children }: { children?: React.ReactNode }) {
         const currentDays = [...data.days_of_week];
 
         if (currentDays.includes(day)) {
-            setData('days_of_week', currentDays.filter(d => d !== day));
+            setData(
+                'days_of_week',
+                currentDays.filter((d) => d !== day),
+            );
         } else {
             setData('days_of_week', [...currentDays, day]);
         }
@@ -74,7 +86,10 @@ export function CreateHabitModal({ children }: { children?: React.ReactNode }) {
                 </DialogHeader>
                 <form onSubmit={submit} className="space-y-4 pt-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name">Habit Name <span className="text-destructive">*</span></Label>
+                        <Label htmlFor="name">
+                            Habit Name{' '}
+                            <span className="text-destructive">*</span>
+                        </Label>
                         <Input
                             id="name"
                             value={data.name}
@@ -82,7 +97,11 @@ export function CreateHabitModal({ children }: { children?: React.ReactNode }) {
                             placeholder="e.g. Drink Water, Read Book"
                             required
                         />
-                        {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+                        {errors.name && (
+                            <p className="text-sm text-destructive">
+                                {errors.name}
+                            </p>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -91,70 +110,112 @@ export function CreateHabitModal({ children }: { children?: React.ReactNode }) {
                             <select
                                 id="category"
                                 value={data.category}
-                                onChange={(e) => setData('category', e.target.value)}
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                onChange={(e) =>
+                                    setData('category', e.target.value)
+                                }
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
                             >
-                                <option value="">Select Category (Optional)</option>
+                                <option value="">
+                                    Select Category (Optional)
+                                </option>
                                 <option value="Health">Health 🍏</option>
                                 <option value="Mind">Mind 🧠</option>
-                                <option value="Productivity">Productivity 🚀</option>
+                                <option value="Productivity">
+                                    Productivity 🚀
+                                </option>
                                 <option value="Finance">Finance 💰</option>
                                 <option value="Fitness">Fitness 🏃</option>
                                 <option value="Social">Social 🤝</option>
                                 <option value="General">General 📌</option>
                             </select>
-                            {errors.category && <p className="text-sm text-destructive">{errors.category}</p>}
+                            {errors.category && (
+                                <p className="text-sm text-destructive">
+                                    {errors.category}
+                                </p>
+                            )}
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="type">Habit Type <span className="text-destructive">*</span></Label>
+                            <Label htmlFor="type">
+                                Habit Type{' '}
+                                <span className="text-destructive">*</span>
+                            </Label>
                             <select
                                 id="type"
                                 value={data.type}
-                                onChange={(e) => setData('type', e.target.value)}
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                onChange={(e) =>
+                                    setData('type', e.target.value)
+                                }
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
                                 required
                             >
-                                <option value="binary">Yes/No (Check-off)</option>
-                                <option value="quantity">Quantity (e.g. 2 Liters)</option>
-                                <option value="duration">Duration (e.g. 30 Mins)</option>
-                                <option value="count">Count (e.g. 50 Pushups)</option>
-                                <option value="avoid">Avoid (e.g. No Sugar)</option>
+                                <option value="binary">
+                                    Yes/No (Check-off)
+                                </option>
+                                <option value="quantity">
+                                    Quantity (e.g. 2 Liters)
+                                </option>
+                                <option value="duration">
+                                    Duration (e.g. 30 Mins)
+                                </option>
+                                <option value="count">
+                                    Count (e.g. 50 Pushups)
+                                </option>
+                                <option value="avoid">
+                                    Avoid (e.g. No Sugar)
+                                </option>
                             </select>
-                            {errors.type && <p className="text-sm text-destructive">{errors.type}</p>}
+                            {errors.type && (
+                                <p className="text-sm text-destructive">
+                                    {errors.type}
+                                </p>
+                            )}
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="frequency">Frequency <span className="text-destructive">*</span></Label>
+                        <Label htmlFor="frequency">
+                            Frequency{' '}
+                            <span className="text-destructive">*</span>
+                        </Label>
                         <select
                             id="frequency"
                             value={data.frequency}
-                            onChange={(e) => setData('frequency', e.target.value)}
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            onChange={(e) =>
+                                setData('frequency', e.target.value)
+                            }
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
                             required
                         >
                             <option value="daily">Daily</option>
                             <option value="weekly">Weekly</option>
                         </select>
-                        {errors.frequency && <p className="text-sm text-destructive">{errors.frequency}</p>}
+                        {errors.frequency && (
+                            <p className="text-sm text-destructive">
+                                {errors.frequency}
+                            </p>
+                        )}
                     </div>
 
                     {data.frequency === 'weekly' && (
-                        <div className="space-y-3 p-3 bg-muted/50 rounded-lg border border-border">
-                            <Label>Select Days <span className="text-destructive">*</span></Label>
+                        <div className="space-y-3 rounded-lg border border-border bg-muted/50 p-3">
+                            <Label>
+                                Select Days{' '}
+                                <span className="text-destructive">*</span>
+                            </Label>
                             <div className="flex flex-wrap gap-2">
                                 {DAYS.map((day) => {
-                                    const isSelected = data.days_of_week.includes(day.value);
+                                    const isSelected =
+                                        data.days_of_week.includes(day.value);
 
                                     return (
                                         <button
                                             key={day.value}
                                             type="button"
                                             onClick={() => toggleDay(day.value)}
-                                            className={`w-10 h-10 rounded-full text-xs font-medium transition-colors ${
-                                                isSelected 
-                                                    ? 'bg-primary text-primary-foreground shadow-sm' 
-                                                    : 'bg-background border border-input text-muted-foreground hover:bg-muted'
+                                            className={`h-10 w-10 rounded-full text-xs font-medium transition-colors ${
+                                                isSelected
+                                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                                    : 'border border-input bg-background text-muted-foreground hover:bg-muted'
                                             }`}
                                         >
                                             {day.label}
@@ -162,35 +223,57 @@ export function CreateHabitModal({ children }: { children?: React.ReactNode }) {
                                     );
                                 })}
                             </div>
-                            {errors.days_of_week && <p className="text-sm text-destructive">{errors.days_of_week}</p>}
+                            {errors.days_of_week && (
+                                <p className="text-sm text-destructive">
+                                    {errors.days_of_week}
+                                </p>
+                            )}
                         </div>
                     )}
 
                     {['quantity', 'duration', 'count'].includes(data.type) && (
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="target_value">Target (Number) <span className="text-destructive">*</span></Label>
+                                <Label htmlFor="target_value">
+                                    Target (Number){' '}
+                                    <span className="text-destructive">*</span>
+                                </Label>
                                 <Input
                                     id="target_value"
                                     type="number"
                                     step="0.01"
                                     value={data.target_value}
-                                    onChange={(e) => setData('target_value', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('target_value', e.target.value)
+                                    }
                                     placeholder="e.g. 2"
                                     required
                                 />
-                                {errors.target_value && <p className="text-sm text-destructive">{errors.target_value}</p>}
+                                {errors.target_value && (
+                                    <p className="text-sm text-destructive">
+                                        {errors.target_value}
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="unit">Unit / Satuan <span className="text-destructive">*</span></Label>
+                                <Label htmlFor="unit">
+                                    Unit / Satuan{' '}
+                                    <span className="text-destructive">*</span>
+                                </Label>
                                 <Input
                                     id="unit"
                                     value={data.unit}
-                                    onChange={(e) => setData('unit', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('unit', e.target.value)
+                                    }
                                     placeholder="e.g. Liters, Mins"
                                     required
                                 />
-                                {errors.unit && <p className="text-sm text-destructive">{errors.unit}</p>}
+                                {errors.unit && (
+                                    <p className="text-sm text-destructive">
+                                        {errors.unit}
+                                    </p>
+                                )}
                             </div>
                         </div>
                     )}

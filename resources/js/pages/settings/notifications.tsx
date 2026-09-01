@@ -12,17 +12,21 @@ export default function Notifications() {
     useEffect(() => {
         // Check if push is already enabled
         if ('Notification' in window && Notification.permission === 'granted') {
-            navigator.serviceWorker.ready.then(registration => {
-                registration.pushManager.getSubscription().then(subscription => {
-                    setIsPushEnabled(!!subscription);
-                });
+            navigator.serviceWorker.ready.then((registration) => {
+                registration.pushManager
+                    .getSubscription()
+                    .then((subscription) => {
+                        setIsPushEnabled(!!subscription);
+                    });
             });
         }
     }, []);
 
     const urlBase64ToUint8Array = (base64String: string) => {
-        const padding = '='.repeat((4 - base64String.length % 4) % 4);
-        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+        const base64 = (base64String + padding)
+            .replace(/-/g, '+')
+            .replace(/_/g, '/');
         const rawData = window.atob(base64);
         const outputArray = new Uint8Array(rawData.length);
 
@@ -42,17 +46,21 @@ export default function Notifications() {
                 const permission = await Notification.requestPermission();
 
                 if (permission !== 'granted') {
-                    toast.error('Notification permission denied. Please enable it in your browser settings.');
+                    toast.error(
+                        'Notification permission denied. Please enable it in your browser settings.',
+                    );
                     setIsLoading(false);
 
                     return;
                 }
 
                 const registration = await navigator.serviceWorker.ready;
-                const vapidPublicKey = document.querySelector('meta[name="vapid-public-key"]')?.getAttribute('content');
+                const vapidPublicKey = document
+                    .querySelector('meta[name="vapid-public-key"]')
+                    ?.getAttribute('content');
 
                 if (!vapidPublicKey) {
-                    console.error("VAPID key not found");
+                    console.error('VAPID key not found');
                     setIsLoading(false);
 
                     return;
@@ -69,9 +77,23 @@ export default function Notifications() {
                 await axios.post('/api/push-subscribe', {
                     endpoint: subscription.endpoint,
                     keys: {
-                        p256dh: key ? btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(key)))) : '',
-                        auth: token ? btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(token)))) : ''
-                    }
+                        p256dh: key
+                            ? btoa(
+                                  String.fromCharCode.apply(
+                                      null,
+                                      Array.from(new Uint8Array(key)),
+                                  ),
+                              )
+                            : '',
+                        auth: token
+                            ? btoa(
+                                  String.fromCharCode.apply(
+                                      null,
+                                      Array.from(new Uint8Array(token)),
+                                  ),
+                              )
+                            : '',
+                    },
                 });
 
                 setIsPushEnabled(true);
@@ -83,8 +105,9 @@ export default function Notifications() {
             // Disable Push Notifications
             try {
                 const registration = await navigator.serviceWorker.ready;
-                const subscription = await registration.pushManager.getSubscription();
-                
+                const subscription =
+                    await registration.pushManager.getSubscription();
+
                 if (subscription) {
                     await subscription.unsubscribe();
                 }
@@ -112,25 +135,27 @@ export default function Notifications() {
                     title="Notification settings"
                     description="Manage how you receive alerts and reminders."
                 />
-                
-                <div className="flex items-center justify-between p-4 border rounded-lg bg-card">
+
+                <div className="flex items-center justify-between rounded-lg border bg-card p-4">
                     <div className="space-y-0.5">
-                        <Label className="text-base font-semibold">Push Notifications</Label>
+                        <Label className="text-base font-semibold">
+                            Push Notifications
+                        </Label>
                         <p className="text-sm text-muted-foreground">
-                            Receive daily habit reminders on your desktop or lock screen.
+                            Receive daily habit reminders on your desktop or
+                            lock screen.
                         </p>
                     </div>
-                    
+
                     <div className="flex items-center">
-                        <input 
-                            type="checkbox" 
-                            className="w-5 h-5 rounded border-border text-primary focus:ring-primary bg-background cursor-pointer" 
-                            checked={isPushEnabled} 
-                            onChange={(e) => handleToggle(e.target.checked)} 
+                        <input
+                            type="checkbox"
+                            className="h-5 w-5 cursor-pointer rounded border-border bg-background text-primary focus:ring-primary"
+                            checked={isPushEnabled}
+                            onChange={(e) => handleToggle(e.target.checked)}
                             disabled={isLoading}
                         />
                     </div>
-
                 </div>
             </div>
         </>

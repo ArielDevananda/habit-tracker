@@ -1,6 +1,13 @@
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Flame, Calendar, Target, TrendingUp, CheckCircle2 } from 'lucide-react';
-import type {BreadcrumbItem} from '@/types';
+import {
+    ArrowLeft,
+    Flame,
+    Calendar,
+    Target,
+    TrendingUp,
+    CheckCircle2,
+} from 'lucide-react';
+import type { BreadcrumbItem } from '@/types';
 
 type HabitCompletion = {
     id: number;
@@ -45,7 +52,7 @@ export default function HabitShow({ habit }: { habit: Habit }) {
         const d = new Date(today);
         d.setDate(d.getDate() - (29 - i));
         const dateStr = d.toLocaleDateString('en-CA');
-        const completed = habit.completions.some(c => {
+        const completed = habit.completions.some((c) => {
             const cDate = new Date(c.completed_on).toLocaleDateString('en-CA');
 
             return cDate === dateStr;
@@ -69,8 +76,8 @@ export default function HabitShow({ habit }: { habit: Habit }) {
         } else {
             // If today and not completed, don't break (user might not have done it yet)
             if (i === last30Days.length - 1) {
-continue;
-}
+                continue;
+            }
 
             break;
         }
@@ -85,20 +92,24 @@ continue;
             currentRun++;
 
             if (currentRun > bestStreak) {
-bestStreak = currentRun;
-}
+                bestStreak = currentRun;
+            }
         } else {
             currentRun = 0;
         }
     }
 
     // Completion rate (last 30 days)
-    const completedDays = last30Days.filter(d => d.completed).length;
+    const completedDays = last30Days.filter((d) => d.completed).length;
     const completionRate = Math.round((completedDays / 30) * 100);
 
     // Recent completions list (last 10)
     const recentCompletions = [...habit.completions]
-        .sort((a, b) => new Date(b.completed_on).getTime() - new Date(a.completed_on).getTime())
+        .sort(
+            (a, b) =>
+                new Date(b.completed_on).getTime() -
+                new Date(a.completed_on).getTime(),
+        )
         .slice(0, 10);
 
     const emoji = categoryEmojis[habit.category || 'General'] || '📌';
@@ -106,36 +117,45 @@ bestStreak = currentRun;
     return (
         <>
             <Head title={habit.name} />
-            <div className="flex-1 overflow-y-auto px-4 md:px-8 max-w-5xl w-full mx-auto py-6">
+            <div className="mx-auto w-full max-w-5xl flex-1 overflow-y-auto px-4 py-6 md:px-8">
                 {/* Back Button */}
-                <Link href="/habits" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
-                    <ArrowLeft className="w-4 h-4" />
+                <Link
+                    href="/habits"
+                    className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                    <ArrowLeft className="h-4 w-4" />
                     Back to My Habits
                 </Link>
 
                 {/* Header */}
-                <div className="bg-card border border-border rounded-xl p-6 shadow-sm mb-6">
+                <div className="mb-6 rounded-xl border border-border bg-card p-6 shadow-sm">
                     <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-3xl shrink-0">
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/10 text-3xl">
                             {emoji}
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold text-foreground">{habit.name}</h1>
+                            <h1 className="text-2xl font-bold text-foreground">
+                                {habit.name}
+                            </h1>
                             {habit.description && (
-                                <p className="text-sm text-muted-foreground mt-1">{habit.description}</p>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    {habit.description}
+                                </p>
                             )}
-                            <div className="flex gap-2 mt-2">
+                            <div className="mt-2 flex gap-2">
                                 {habit.category && (
-                                    <span className="px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-600 text-xs font-medium">
+                                    <span className="rounded-md bg-blue-500/10 px-2.5 py-1 text-xs font-medium text-blue-600">
                                         {habit.category}
                                     </span>
                                 )}
-                                <span className="px-2.5 py-1 rounded-md bg-muted text-muted-foreground text-xs font-medium capitalize">
+                                <span className="rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground capitalize">
                                     {habit.frequency}
-                                    {habit.target_value ? ` • ${habit.target_value} ${habit.unit || ''}` : ''}
+                                    {habit.target_value
+                                        ? ` • ${habit.target_value} ${habit.unit || ''}`
+                                        : ''}
                                 </span>
                                 {habit.status !== 'active' && (
-                                    <span className="px-2.5 py-1 rounded-md bg-yellow-500/10 text-yellow-600 text-xs font-medium capitalize flex items-center gap-1">
+                                    <span className="flex items-center gap-1 rounded-md bg-yellow-500/10 px-2.5 py-1 text-xs font-medium text-yellow-600 capitalize">
                                         {habit.status}
                                     </span>
                                 )}
@@ -145,58 +165,77 @@ bestStreak = currentRun;
                 </div>
 
                 {/* Stats Row */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-card border border-border rounded-xl p-4 shadow-sm text-center">
-                        <Flame className="w-5 h-5 text-primary mx-auto mb-2" />
-                        <p className="text-2xl font-bold text-foreground">{streak}</p>
-                        <p className="text-xs text-muted-foreground">Current Streak</p>
+                <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+                    <div className="rounded-xl border border-border bg-card p-4 text-center shadow-sm">
+                        <Flame className="mx-auto mb-2 h-5 w-5 text-primary" />
+                        <p className="text-2xl font-bold text-foreground">
+                            {streak}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            Current Streak
+                        </p>
                     </div>
-                    <div className="bg-card border border-border rounded-xl p-4 shadow-sm text-center">
-                        <TrendingUp className="w-5 h-5 text-emerald-500 mx-auto mb-2" />
-                        <p className="text-2xl font-bold text-foreground">{bestStreak}</p>
-                        <p className="text-xs text-muted-foreground">Best Streak</p>
+                    <div className="rounded-xl border border-border bg-card p-4 text-center shadow-sm">
+                        <TrendingUp className="mx-auto mb-2 h-5 w-5 text-emerald-500" />
+                        <p className="text-2xl font-bold text-foreground">
+                            {bestStreak}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            Best Streak
+                        </p>
                     </div>
-                    <div className="bg-card border border-border rounded-xl p-4 shadow-sm text-center">
-                        <Target className="w-5 h-5 text-blue-500 mx-auto mb-2" />
-                        <p className="text-2xl font-bold text-foreground">{completionRate}%</p>
-                        <p className="text-xs text-muted-foreground">Last 30 Days</p>
+                    <div className="rounded-xl border border-border bg-card p-4 text-center shadow-sm">
+                        <Target className="mx-auto mb-2 h-5 w-5 text-blue-500" />
+                        <p className="text-2xl font-bold text-foreground">
+                            {completionRate}%
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            Last 30 Days
+                        </p>
                     </div>
-                    <div className="bg-card border border-border rounded-xl p-4 shadow-sm text-center">
-                        <CheckCircle2 className="w-5 h-5 text-amber-500 mx-auto mb-2" />
-                        <p className="text-2xl font-bold text-foreground">{habit.total_completions}</p>
-                        <p className="text-xs text-muted-foreground">Total Check-ins</p>
+                    <div className="rounded-xl border border-border bg-card p-4 text-center shadow-sm">
+                        <CheckCircle2 className="mx-auto mb-2 h-5 w-5 text-amber-500" />
+                        <p className="text-2xl font-bold text-foreground">
+                            {habit.total_completions}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            Total Check-ins
+                        </p>
                     </div>
                 </div>
 
                 {/* 30-Day Chart */}
-                <div className="bg-card border border-border rounded-xl p-6 shadow-sm mb-6">
-                    <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                        <Calendar className="w-5 h-5" />
+                <div className="mb-6 rounded-xl border border-border bg-card p-6 shadow-sm">
+                    <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+                        <Calendar className="h-5 w-5" />
                         Last 30 Days
                     </h3>
-                    <div className="grid grid-cols-10 sm:grid-cols-15 md:grid-cols-30 gap-1.5">
+                    <div className="grid grid-cols-10 gap-1.5 sm:grid-cols-15 md:grid-cols-30">
                         {last30Days.map((day, i) => (
-                            <div key={i} className="group relative flex flex-col items-center">
+                            <div
+                                key={i}
+                                className="group relative flex flex-col items-center"
+                            >
                                 <div
-                                    className={`w-full aspect-square rounded-md transition-colors ${
+                                    className={`aspect-square w-full rounded-md transition-colors ${
                                         day.completed
                                             ? 'bg-primary shadow-sm'
                                             : 'bg-muted'
                                     }`}
                                 />
                                 {/* Tooltip */}
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-foreground text-background text-[10px] px-2 py-1 rounded whitespace-nowrap z-20">
+                                <div className="absolute bottom-full left-1/2 z-20 mb-2 hidden -translate-x-1/2 rounded bg-foreground px-2 py-1 text-[10px] whitespace-nowrap text-background group-hover:block">
                                     {day.dateStr} {day.completed ? '✅' : '❌'}
                                 </div>
                             </div>
                         ))}
                     </div>
-                    <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
+                    <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
                         <span>{last30Days[0].dateStr}</span>
                         <div className="flex items-center gap-2">
                             <span>Miss</span>
-                            <div className="w-3 h-3 rounded-sm bg-muted"></div>
-                            <div className="w-3 h-3 rounded-sm bg-primary"></div>
+                            <div className="h-3 w-3 rounded-sm bg-muted"></div>
+                            <div className="h-3 w-3 rounded-sm bg-primary"></div>
                             <span>Done</span>
                         </div>
                         <span>{last30Days[last30Days.length - 1].dateStr}</span>
@@ -204,26 +243,39 @@ bestStreak = currentRun;
                 </div>
 
                 {/* Recent Activity */}
-                <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-                    <h3 className="text-lg font-semibold text-foreground mb-4">Recent Activity</h3>
+                <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+                    <h3 className="mb-4 text-lg font-semibold text-foreground">
+                        Recent Activity
+                    </h3>
                     {recentCompletions.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-4">No completions recorded yet.</p>
+                        <p className="py-4 text-center text-sm text-muted-foreground">
+                            No completions recorded yet.
+                        </p>
                     ) : (
                         <div className="space-y-3">
                             {recentCompletions.map((completion) => {
                                 const d = new Date(completion.completed_on);
 
                                 return (
-                                    <div key={completion.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                                    <div
+                                        key={completion.id}
+                                        className="flex items-center justify-between border-b border-border py-2 last:border-0"
+                                    >
                                         <div className="flex items-center gap-3">
-                                            <CheckCircle2 className="w-4 h-4 text-primary" />
+                                            <CheckCircle2 className="h-4 w-4 text-primary" />
                                             <span className="text-sm text-foreground">
-                                                {d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
+                                                {d.toLocaleDateString('en-US', {
+                                                    weekday: 'long',
+                                                    month: 'short',
+                                                    day: 'numeric',
+                                                    year: 'numeric',
+                                                })}
                                             </span>
                                         </div>
                                         {completion.value && (
                                             <span className="text-sm text-muted-foreground">
-                                                {completion.value} {habit.unit || ''}
+                                                {completion.value}{' '}
+                                                {habit.unit || ''}
                                             </span>
                                         )}
                                     </div>
