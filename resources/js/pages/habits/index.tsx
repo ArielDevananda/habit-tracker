@@ -5,16 +5,19 @@ import { EditHabitModal } from '@/components/edit-habit-modal';
 import { DeleteHabitModal } from '@/components/delete-habit-modal';
 
 export default function HabitsIndex({ habits = [] }: { habits?: any[] }) {
-    const [activeFilter, setActiveFilter] = useState('All Active');
+    const [activeFilter, setActiveFilter] = useState('All');
+    const [statusFilter, setStatusFilter] = useState('active');
     const [sortBy, setSortBy] = useState('streak');
     
     // Get unique categories from the user's habits (ignoring null/empty)
     const availableCategories = Array.from(new Set(habits.map(h => h.category).filter(Boolean)));
     
-    // Filter habits based on selected category
-    const filteredHabits = activeFilter === 'All Active' 
-        ? habits 
-        : habits.filter(h => h.category === activeFilter);
+    // Filter habits based on selected category and status
+    const filteredHabits = habits.filter(h => {
+        const matchesCategory = activeFilter === 'All' || h.category === activeFilter;
+        const matchesStatus = h.status === statusFilter;
+        return matchesCategory && matchesStatus;
+    });
 
     // Sort habits based on selected sort option
     const sortedHabits = [...filteredHabits].sort((a, b) => {
@@ -43,10 +46,10 @@ export default function HabitsIndex({ habits = [] }: { habits?: any[] }) {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                     <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto snap-x hide-scrollbar">
                         <button 
-                            onClick={() => setActiveFilter('All Active')}
-                            className={`snap-start shrink-0 px-4 py-1.5 rounded-full text-sm font-medium shadow-sm transition-all active:scale-95 ${activeFilter === 'All Active' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground hover:bg-muted'}`}
+                            onClick={() => setActiveFilter('All')}
+                            className={`snap-start shrink-0 px-4 py-1.5 rounded-full text-sm font-medium shadow-sm transition-all active:scale-95 ${activeFilter === 'All' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground hover:bg-muted'}`}
                         >
-                            All Active
+                            All Categories
                         </button>
                         {availableCategories.map((cat: any) => (
                             <button 
@@ -58,17 +61,31 @@ export default function HabitsIndex({ habits = [] }: { habits?: any[] }) {
                             </button>
                         ))}
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sort by:</span>
-                        <select 
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value)}
-                            className="bg-transparent border-none text-base font-medium text-primary focus:ring-0 cursor-pointer py-1 pl-1 pr-6"
-                        >
-                            <option value="streak">Completions (High to Low)</option>
-                            <option value="name">Name (A-Z)</option>
-                            <option value="recent">Recent</option>
-                        </select>
+                    <div className="flex items-center gap-4 shrink-0 flex-wrap">
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status:</span>
+                            <select 
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="bg-transparent border-none text-base font-medium text-primary focus:ring-0 cursor-pointer py-1 pl-1 pr-6"
+                            >
+                                <option value="active">Active</option>
+                                <option value="paused">Paused</option>
+                                <option value="archived">Archived</option>
+                            </select>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sort by:</span>
+                            <select 
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                                className="bg-transparent border-none text-base font-medium text-primary focus:ring-0 cursor-pointer py-1 pl-1 pr-6"
+                            >
+                                <option value="streak">Completions (High to Low)</option>
+                                <option value="name">Name (A-Z)</option>
+                                <option value="recent">Recent</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -82,8 +99,7 @@ export default function HabitsIndex({ habits = [] }: { habits?: any[] }) {
                         sortedHabits.map((habit: any) => (
                             <Link key={habit.id} href={`/habits/${habit.id}`} className="block">
                             <article className="bg-card rounded-xl p-6 shadow-sm flex flex-col sm:flex-row gap-6 relative group border border-border hover:-translate-y-0.5 hover:shadow-md transition-all cursor-pointer">
-                                {/* Actions Menu (Hover) */}
-                                <div className="absolute top-4 right-4 opacity-0 sm:group-hover:opacity-100 transition-opacity flex gap-2" onClick={(e) => e.preventDefault()}>
+                                <div className="absolute top-4 right-4 opacity-0 sm:group-hover:opacity-100 transition-opacity flex gap-2" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
                                     <EditHabitModal habit={habit} />
                                     <DeleteHabitModal habit={habit} />
                                 </div>
@@ -109,6 +125,11 @@ export default function HabitsIndex({ habits = [] }: { habits?: any[] }) {
                                         {habit.category && (
                                             <span className="px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-600 text-xs font-medium">
                                                 {habit.category}
+                                            </span>
+                                        )}
+                                        {habit.status !== 'active' && (
+                                            <span className="px-2.5 py-1 rounded-md bg-yellow-500/10 text-yellow-600 text-xs font-medium capitalize">
+                                                {habit.status}
                                             </span>
                                         )}
                                     </div>

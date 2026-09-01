@@ -42,7 +42,7 @@ class HabitCompletion extends Model
     protected function casts(): array
     {
         return [
-            'completed_on' => 'date',
+            'completed_on' => 'date:Y-m-d',
             'value' => 'decimal:2',
         ];
     }

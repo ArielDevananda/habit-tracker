@@ -23,9 +23,48 @@ type Habit = {
     unit: string | null;
     frequency: string;
     days_of_week: string[] | null;
-    is_active: boolean;
+    type: string;
+    status: string;
     start_date: string;
     completions: HabitCompletion[];
+};
+
+const HabitProgressInput = ({ habit, selectedDate, currentValue }: any) => {
+    const [val, setVal] = useState(currentValue.toString());
+    
+    useEffect(() => {
+        setVal(currentValue.toString());
+    }, [currentValue]);
+
+    const handleUpdate = () => {
+        const num = parseFloat(val);
+        if (isNaN(num)) {
+            setVal(currentValue.toString());
+            return;
+        }
+        if (num !== currentValue) {
+            router.post(`/habits/${habit.id}/value`, { 
+                date: selectedDate, 
+                value: Math.max(0, num) 
+            }, { preserveScroll: true });
+        }
+    };
+
+    return (
+        <input 
+            type="number"
+            value={val}
+            onChange={(e) => setVal(e.target.value)}
+            onBlur={handleUpdate}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                    e.currentTarget.blur();
+                }
+            }}
+            className="w-12 text-center text-sm font-medium p-0 border-none bg-transparent focus:ring-1 focus:ring-primary rounded hide-arrows"
+            style={{ MozAppearance: 'textfield' }}
+        />
+    );
 };
 
 export default function Dashboard({ habits = [] }: { habits?: Habit[] }) {
@@ -35,19 +74,25 @@ export default function Dashboard({ habits = [] }: { habits?: Habit[] }) {
     const today = new Date().toLocaleDateString('en-CA');
     const [selectedDate, setSelectedDate] = useState<string>(today);
 
-    // Fungsi bantuan untuk mengecek apakah habit sudah diselesaikan pada tanggal terpilih
-    const isCompletedOnDate = (habit: any, date: string) => {
-        return habit.completions.some((c: any) => {
-            const completedLocal = new Date(c.completed_on).toLocaleDateString('en-CA');
-            return completedLocal === date;
+    const getCompletionValue = (habit: any, date: string) => {
+        const completion = habit.completions.find((c: any) => {
+            return c.completed_on.split('T')[0] === date;
         });
+        return completion ? parseFloat(completion.value || habit.target_value || 1) : 0;
+    };
+
+    const isCompletedOnDate = (habit: any, date: string) => {
+        if (habit.type === 'binary' || habit.type === 'avoid') {
+            return habit.completions.some((c: any) => c.completed_on.split('T')[0] === date);
+        }
+        return getCompletionValue(habit, date) >= parseFloat(habit.target_value || 1);
     };
 
     const isCompletedToday = (habit: any) => isCompletedOnDate(habit, selectedDate);
 
     // Helper to check if a habit should be done on a specific date string (YYYY-MM-DD)
     const isHabitTargetedForDate = (habit: any, dateStr: string) => {
-        if (!habit.is_active) return false;
+        if (habit.status !== 'active') return false;
         
         // Ensure habit has started
         const habitStartDate = habit.start_date ? habit.start_date.split('T')[0] : '';
@@ -129,11 +174,45 @@ export default function Dashboard({ habits = [] }: { habits?: Habit[] }) {
                                 return (
                                     <div key={habit.id} className={`bg-card rounded-xl p-4 md:p-6 shadow-sm border border-border flex items-center justify-between border-l-4 transition-colors ${completed ? 'border-l-primary' : 'border-l-transparent hover:border-l-border'}`}>
                                         <div className="flex items-center space-x-4">
-                                            <Checkbox 
-                                                checked={completed} 
-                                                onCheckedChange={() => router.post(`/habits/${habit.id}/toggle`, { date: selectedDate }, { preserveScroll: true })}
-                                                className="w-6 h-6 rounded-full" 
-                                            />
+                                            {['binary', 'avoid'].includes(habit.type) ? (
+                                                <Checkbox 
+                                                    checked={completed} 
+                                                    onCheckedChange={() => router.post(`/habits/${habit.id}/toggle`, { date: selectedDate }, { preserveScroll: true })}
+                                                    className="w-6 h-6 rounded-full shrink-0" 
+                                                />
+                                            ) : (
+                                                <div className="flex flex-col items-center shrink-0 w-20">
+                                                    <div className="flex items-center space-x-1 mb-1">
+                                                        <button 
+                                                            onClick={(e) => { 
+                                                                e.preventDefault(); 
+                                                                const step = Math.max(1, Math.ceil((parseFloat(habit.target_value) || 1) / 10));
+                                                                router.post(`/habits/${habit.id}/value`, { date: selectedDate, value: Math.max(0, getCompletionValue(habit, selectedDate) - step) }, { preserveScroll: true })
+                                                            }}
+                                                            className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors leading-none"
+                                                        >-</button>
+                                                        <HabitProgressInput 
+                                                            habit={habit} 
+                                                            selectedDate={selectedDate} 
+                                                            currentValue={getCompletionValue(habit, selectedDate)} 
+                                                        />
+                                                        <button 
+                                                            onClick={(e) => { 
+                                                                e.preventDefault(); 
+                                                                const step = Math.max(1, Math.ceil((parseFloat(habit.target_value) || 1) / 10));
+                                                                router.post(`/habits/${habit.id}/value`, { date: selectedDate, value: getCompletionValue(habit, selectedDate) + step }, { preserveScroll: true })
+                                                            }}
+                                                            className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors leading-none"
+                                                        >+</button>
+                                                    </div>
+                                                    <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                        <div 
+                                                            className="h-full bg-primary transition-all duration-300"
+                                                            style={{ width: `${Math.min(100, (getCompletionValue(habit, selectedDate) / (parseFloat(habit.target_value) || 1)) * 100)}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
                                             <div>
                                                 <h4 className={`text-lg text-foreground ${completed ? 'line-through opacity-50' : ''}`}>{habit.name}</h4>
                                                 <div className="flex space-x-2 mt-1">
@@ -208,8 +287,7 @@ export default function Dashboard({ habits = [] }: { habits?: Habit[] }) {
                                     const dayTotal = targetHabits.length;
                                     const dayCompleted = targetHabits.filter(h => 
                                         h.completions.some((c: any) => {
-                                            const completedLocal = new Date(c.completed_on).toLocaleDateString('en-CA');
-                                            return completedLocal === dateString;
+                                            return c.completed_on.split('T')[0] === dateString;
                                         })
                                     ).length;
 

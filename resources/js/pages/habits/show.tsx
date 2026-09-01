@@ -19,7 +19,8 @@ type Habit = {
     unit: string | null;
     frequency: string;
     days_of_week: string[] | null;
-    is_active: boolean;
+    type: string;
+    status: string;
     start_date: string;
     completions: HabitCompletion[];
     total_completions: number;
@@ -123,6 +124,11 @@ export default function HabitShow({ habit }: { habit: Habit }) {
                                     {habit.frequency}
                                     {habit.target_value ? ` • ${habit.target_value} ${habit.unit || ''}` : ''}
                                 </span>
+                                {habit.status !== 'active' && (
+                                    <span className="px-2.5 py-1 rounded-md bg-yellow-500/10 text-yellow-600 text-xs font-medium capitalize flex items-center gap-1">
+                                        {habit.status}
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>

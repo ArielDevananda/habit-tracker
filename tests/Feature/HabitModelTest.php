@@ -26,7 +26,7 @@ test('habit attributes use the expected defaults and casts', function () {
     ]);
 
     expect($habit->frequency)->toBe('daily')
-        ->and($habit->is_active)->toBeTrue()
+        ->and($habit->status)->toBe('active')
         ->and($habit->target_value)->toBe('20.00')
         ->and($habit->days_of_week)->toBe([1, 3, 5])
         ->and($habit->start_date->toDateString())->toBe('2026-08-18');

@@ -25,7 +25,7 @@ class HabitSeeder extends Seeder
                 'unit' => 'glasses',
                 'frequency' => 'daily',
                 'days_of_week' => null,
-                'is_active' => true,
+                'status' => 'active',
                 'start_date' => today()->subDays(30),
             ],
             [
@@ -36,7 +36,7 @@ class HabitSeeder extends Seeder
                 'unit' => 'pages',
                 'frequency' => 'daily',
                 'days_of_week' => null,
-                'is_active' => true,
+                'status' => 'active',
                 'start_date' => today()->subDays(30),
             ],
             [
@@ -47,7 +47,7 @@ class HabitSeeder extends Seeder
                 'unit' => 'minutes',
                 'frequency' => 'daily',
                 'days_of_week' => null,
-                'is_active' => true,
+                'status' => 'active',
                 'start_date' => today()->subDays(30),
             ],
             [
@@ -58,7 +58,7 @@ class HabitSeeder extends Seeder
                 'unit' => 'minutes',
                 'frequency' => 'daily',
                 'days_of_week' => null,
-                'is_active' => true,
+                'status' => 'active',
                 'start_date' => today()->subDays(30),
             ],
             [

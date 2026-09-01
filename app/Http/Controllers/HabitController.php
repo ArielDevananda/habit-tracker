@@ -34,7 +34,8 @@ class HabitController extends Controller
                 'unit',
                 'frequency',
                 'days_of_week',
-                'is_active',
+                'type',
+                'status',
                 'start_date',
             ])
             ->with([
@@ -78,7 +79,8 @@ class HabitController extends Controller
                 'unit',
                 'frequency',
                 'days_of_week',
-                'is_active',
+                'type',
+                'status',
                 'start_date',
             ])
             ->withCount('completions')
@@ -137,7 +139,7 @@ class HabitController extends Controller
             'message' => __('Habit created.'),
         ]);
 
-        return to_route('dashboard');
+        return back();
     }
 
     /**
@@ -159,7 +161,7 @@ class HabitController extends Controller
             'message' => __('Habit updated.'),
         ]);
 
-        return to_route('dashboard');
+        return back();
     }
 
     /**
@@ -176,7 +178,7 @@ class HabitController extends Controller
             'message' => __('Habit deleted.'),
         ]);
 
-        return to_route('dashboard');
+        return back();
     }
 
     /**
@@ -213,6 +215,34 @@ class HabitController extends Controller
     }
 
     /**
+     * Update the exact completion value of the habit for a specific date.
+     */
+    public function updateValue(Request $request, Habit $habit): RedirectResponse
+    {
+        Gate::authorize('update', $habit);
+
+        $request->validate([
+            'date' => ['nullable', 'date'],
+            'value' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $dateStr = $request->input('date');
+        $targetDate = $dateStr ? Carbon::parse($dateStr)->startOfDay() : today();
+        $value = (float) $request->input('value');
+
+        if ($value <= 0) {
+            $habit->completions()->whereDate('completed_on', $targetDate)->delete();
+        } else {
+            $habit->completions()->updateOrCreate(
+                ['completed_on' => $targetDate],
+                ['value' => $value]
+            );
+        }
+
+        return back();
+    }
+
+    /**
      * Display the analytics page.
      */
     public function analytics(Request $request): Response
@@ -230,7 +260,8 @@ class HabitController extends Controller
                 'unit',
                 'frequency',
                 'days_of_week',
-                'is_active',
+                'type',
+                'status',
                 'start_date',
             ])
             ->with([

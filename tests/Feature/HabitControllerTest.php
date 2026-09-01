@@ -74,7 +74,7 @@ test('authenticated user can create a daily habit', function () {
             'unit' => 'pages',
             'frequency' => 'daily',
             'days_of_week' => [1, 3],
-            'is_active' => true,
+            'status' => 'active', 'type' => 'binary',
             'start_date' => today()->toDateString(),
         ]);
 
@@ -87,7 +87,7 @@ test('authenticated user can create a daily habit', function () {
         'name' => 'Read Books',
         'frequency' => 'daily',
         'days_of_week' => null,
-        'is_active' => true,
+        'status' => 'active', 'type' => 'binary',
     ]);
 });
 
@@ -111,7 +111,7 @@ test('habit owner can update their habit', function () {
             'unit' => 'minutes',
             'frequency' => 'weekly',
             'days_of_week' => [1, 3, 5],
-            'is_active' => true,
+            'status' => 'active', 'type' => 'binary',
             'start_date' => today()->toDateString(),
         ]);
 
@@ -166,7 +166,7 @@ test('user cannot update a habit owned by another user', function () {
             'unit' => 'minutes',
             'frequency' => 'daily',
             'days_of_week' => null,
-            'is_active' => true,
+            'status' => 'active', 'type' => 'binary',
             'start_date' => today()->toDateString(),
         ]);
 

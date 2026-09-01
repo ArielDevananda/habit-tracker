@@ -12,8 +12,11 @@ class UpdateHabitRequest extends StoreHabitRequest
     public function authorize(): bool
     {
         $habit = $this->route('habit');
+        
+        if (! $habit instanceof Habit) {
+            $habit = Habit::find($habit);
+        }
 
-        return $habit instanceof Habit
-            && ($this->user()?->can('update', $habit) ?? false);
+        return $habit && ($this->user()?->can('update', $habit) ?? false);
     }
 }

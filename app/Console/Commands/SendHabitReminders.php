@@ -31,11 +31,11 @@ class SendHabitReminders extends Command
 
         // Get all users who have active daily habits
         $users = User::whereHas('habits', function ($query) {
-            $query->where('is_active', true)
-                  ->where('frequency', 'daily');
+            $query->where('status', 'active')
+                ->where('frequency', 'daily');
         })->with(['habits' => function ($query) {
-            $query->where('is_active', true)
-                  ->where('frequency', 'daily');
+            $query->where('status', 'active')
+                ->where('frequency', 'daily');
         }, 'habits.completions' => function ($query) use ($today) {
             $query->whereDate('completed_on', $today);
         }])->get();
@@ -49,7 +49,7 @@ class SendHabitReminders extends Command
                 // If the habit doesn't have a completion for today
                 if ($habit->completions->isEmpty()) {
                     // Make sure it started before or on today
-                    if (!$habit->start_date || $habit->start_date <= $today) {
+                    if (! $habit->start_date || $habit->start_date <= $today) {
                         $uncompletedCount++;
                     }
                 }

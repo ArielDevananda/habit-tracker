@@ -41,16 +41,22 @@ class StoreHabitRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:1000'],
             'category' => ['nullable', 'string', Rule::in(['Health', 'Mind', 'Productivity', 'Finance', 'Fitness', 'Social', 'General'])],
 
+            'type' => [
+                'required',
+                'string',
+                Rule::in(['binary', 'quantity', 'duration', 'count', 'avoid']),
+            ],
             'target_value' => [
+                Rule::requiredIf(function () {
+                    return in_array($this->type, ['quantity', 'duration', 'count']);
+                }),
                 'nullable',
-                'required_with:unit',
                 'numeric',
                 'min:0.01',
                 'max:999999.99',
             ],
             'unit' => [
                 'nullable',
-                'required_with:target_value',
                 'string',
                 'max:30',
             ],
@@ -75,7 +81,7 @@ class StoreHabitRequest extends FormRequest
                 'distinct',
             ],
 
-            'is_active' => ['sometimes', 'boolean'],
+            'status' => ['sometimes', 'string', Rule::in(['active', 'paused', 'archived'])],
             'start_date' => ['required', 'date'],
         ];
     }

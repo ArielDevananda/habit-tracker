@@ -36,7 +36,7 @@ class SendDailyReminder extends Command
 
         foreach ($users as $user) {
             $habits = $user->habits()
-                ->where('is_active', true)
+                ->where('status', 'active')
                 ->get();
 
             if ($habits->isEmpty()) {

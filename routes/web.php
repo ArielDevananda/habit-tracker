@@ -19,6 +19,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('habits/{habit}/toggle', [HabitController::class, 'toggle'])
         ->name('habits.toggle');
+    Route::post('habits/{habit}/value', [HabitController::class, 'updateValue'])
+        ->name('habits.value');
 
     Route::get('/analytics', [HabitController::class, 'analytics'])->name('analytics');
 

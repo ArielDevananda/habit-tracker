@@ -20,9 +20,10 @@ use Illuminate\Support\Carbon;
  * @property string|null $category
  * @property string|null $target_value
  * @property string|null $unit
+ * @property string $type
  * @property string $frequency
  * @property array<int, int>|null $days_of_week
- * @property bool $is_active
+ * @property string $status
  * @property Carbon $start_date
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -36,9 +37,10 @@ use Illuminate\Support\Carbon;
     'category',
     'target_value',
     'unit',
+    'type',
     'frequency',
     'days_of_week',
-    'is_active',
+    'status',
     'start_date',
 ])]
 class Habit extends Model
@@ -52,8 +54,9 @@ class Habit extends Model
      * @var array<string, mixed>
      */
     protected $attributes = [
+        'type' => 'binary',
         'frequency' => 'daily',
-        'is_active' => true,
+        'status' => 'active',
     ];
 
     public function user(): BelongsTo
@@ -76,8 +79,7 @@ class Habit extends Model
         return [
             'target_value' => 'decimal:2',
             'days_of_week' => 'array',
-            'is_active' => 'boolean',
-            'start_date' => 'date',
+            'start_date' => 'date:Y-m-d',
         ];
     }
 }
