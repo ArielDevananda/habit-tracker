@@ -1,7 +1,7 @@
 import { Head, usePage, router } from '@inertiajs/react';
 import { startOfWeek, addDays, format, isSameDay, startOfDay } from 'date-fns';
 import { Flame, CheckCircle2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CreateHabitModal } from '@/components/create-habit-modal';
 import { Checkbox } from '@/components/ui/checkbox';
 import { dashboard } from '@/routes';
