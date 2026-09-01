@@ -42,6 +42,8 @@ use Illuminate\Support\Carbon;
     'days_of_week',
     'status',
     'start_date',
+    'current_streak',
+    'longest_streak',
 ])]
 class Habit extends Model
 {
@@ -58,6 +60,80 @@ class Habit extends Model
         'frequency' => 'daily',
         'status' => 'active',
     ];
+
+    public function recalculateStreak(): void
+    {
+        $completions = $this->completions()->orderBy('completed_on')->get();
+        
+        $completedDates = [];
+        foreach ($completions as $c) {
+            $isSuccess = false;
+            if (in_array($this->type, ['binary', 'avoid'])) {
+                $isSuccess = true;
+            } else {
+                $isSuccess = $c->value >= ($this->target_value ?? 1);
+            }
+            
+            if ($isSuccess) {
+                $completedDates[] = Carbon::parse($c->completed_on)->format('Y-m-d');
+            }
+        }
+        
+        $startDate = Carbon::parse($this->start_date)->startOfDay();
+        $today = Carbon::today();
+        
+        $scheduledDates = [];
+        $current = $startDate->copy();
+        while ($current->lte($today)) {
+            $add = false;
+            if ($this->frequency === 'daily') {
+                $add = true;
+            } elseif ($this->frequency === 'weekly' && is_array($this->days_of_week)) {
+                if (in_array($current->dayOfWeek, $this->days_of_week)) {
+                    $add = true;
+                }
+            }
+            
+            if ($add) {
+                $scheduledDates[] = $current->format('Y-m-d');
+            }
+            $current->addDay();
+        }
+        
+        $currentStreak = 0;
+        $longestStreak = 0;
+        $tempStreak = 0;
+        $todayStr = $today->format('Y-m-d');
+        
+        $scheduledDatesRev = array_reverse($scheduledDates);
+        
+        foreach ($scheduledDatesRev as $date) {
+            if (in_array($date, $completedDates)) {
+                $currentStreak++;
+            } else {
+                if ($date === $todayStr) {
+                    continue;
+                }
+                break;
+            }
+        }
+        
+        foreach ($scheduledDates as $date) {
+            if (in_array($date, $completedDates)) {
+                $tempStreak++;
+                if ($tempStreak > $longestStreak) {
+                    $longestStreak = $tempStreak;
+                }
+            } else {
+                $tempStreak = 0;
+            }
+        }
+        
+        $this->updateQuietly([
+            'current_streak' => $currentStreak,
+            'longest_streak' => $longestStreak,
+        ]);
+    }
 
     public function user(): BelongsTo
     {

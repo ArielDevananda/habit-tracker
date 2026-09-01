@@ -37,6 +37,8 @@ class HabitController extends Controller
                 'type',
                 'status',
                 'start_date',
+                'current_streak',
+                'longest_streak',
             ])
             ->with([
                 'completions' => fn (HasMany $query) => $query
@@ -48,8 +50,8 @@ class HabitController extends Controller
                         'note',
                     ])
                     ->whereBetween('completed_on', [
-                        today()->subDays(6),
-                        today()->endOfDay(),
+                        now()->startOfWeek()->format('Y-m-d'),
+                        now()->endOfWeek()->format('Y-m-d'),
                     ])
                     ->oldest('completed_on'),
             ])
@@ -82,6 +84,8 @@ class HabitController extends Controller
                 'type',
                 'status',
                 'start_date',
+                'current_streak',
+                'longest_streak',
             ])
             ->withCount('completions')
             ->latest('id')
@@ -206,6 +210,8 @@ class HabitController extends Controller
             $message = __('Habit completed!');
         }
 
+        $habit->recalculateStreak();
+
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => $message,
@@ -239,6 +245,8 @@ class HabitController extends Controller
             );
         }
 
+        $habit->recalculateStreak();
+
         return back();
     }
 
@@ -263,6 +271,8 @@ class HabitController extends Controller
                 'type',
                 'status',
                 'start_date',
+                'current_streak',
+                'longest_streak',
             ])
             ->with([
                 'completions' => fn (HasMany $query) => $query

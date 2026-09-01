@@ -4,6 +4,7 @@ import { dashboard } from '@/routes';
 import { Flame, CheckCircle2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CreateHabitModal } from '@/components/create-habit-modal';
+import { startOfWeek, addDays, format, isSameDay, startOfDay } from 'date-fns';
 import type { Auth } from '@/types/auth';
 
 type HabitCompletion = {
@@ -272,14 +273,15 @@ export default function Dashboard({ habits = [] }: { habits?: Habit[] }) {
                             </div>
                             <div className="flex justify-between">
                                 {Array.from({ length: 7 }).map((_, i) => {
-                                    // Generate the last 7 days ending with today (or start from Monday to Sunday depending on preference)
-                                    // Let's do a sliding window of the last 7 days ending today
-                                    const d = new Date();
-                                    d.setDate(d.getDate() - (6 - i));
-                                    const dateString = d.toLocaleDateString('en-CA');
-                                    const dayName = d.toLocaleDateString('en-US', { weekday: 'short' }).charAt(0);
-                                    const dayOfWeekNum = d.getDay(); // 0 (Sun) to 6 (Sat)
-                                    const isToday = i === 6;
+                                    // Generate the current week (Monday to Sunday)
+                                    const now = new Date();
+                                    const startOfCurrentWeek = startOfWeek(now, { weekStartsOn: 1 }); // 1 = Monday
+                                    const d = addDays(startOfCurrentWeek, i);
+                                    
+                                    const dateString = format(d, 'yyyy-MM-dd'); // Same as 'en-CA'
+                                    const dayNameShort = format(d, 'E').charAt(0);
+                                    
+                                    const isToday = isSameDay(d, now);
 
                                     // Hitung target habits untuk hari ini
                                     const targetHabits = habits.filter(h => isHabitTargetedForDate(h, dateString));
@@ -293,8 +295,7 @@ export default function Dashboard({ habits = [] }: { habits?: Habit[] }) {
 
                                     const allDone = dayTotal > 0 && dayCompleted === dayTotal;
                                     const someDone = dayCompleted > 0 && !allDone;
-                                    const noneDone = dayCompleted === 0;
-                                    const isPast = d < new Date(new Date().setHours(0,0,0,0));
+                                    const isFuture = startOfDay(d) > startOfDay(now);
 
                                     const isSelected = selectedDate === dateString;
 
@@ -302,24 +303,20 @@ export default function Dashboard({ habits = [] }: { habits?: Habit[] }) {
                                         <button 
                                             key={i} 
                                             onClick={() => setSelectedDate(dateString)}
-                                            className={`flex flex-col items-center space-y-2 focus:outline-none transition-transform hover:scale-110 active:scale-95 ${(!isToday && !isPast) ? 'opacity-50' : 'cursor-pointer'}`}
+                                            className={`flex flex-col items-center space-y-2 focus:outline-none transition-transform hover:scale-110 active:scale-95 ${isFuture ? 'opacity-50' : 'cursor-pointer'}`}
                                         >
-                                            <span className={`text-xs font-medium ${isToday ? 'text-foreground font-bold' : 'text-muted-foreground'} ${isSelected ? 'text-primary' : ''}`}>{dayName}</span>
+                                            <span className={`text-xs font-medium ${isToday ? 'text-foreground font-bold' : 'text-muted-foreground'} ${isSelected ? 'text-primary' : ''}`}>{dayNameShort}</span>
                                             {allDone ? (
-                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-card' : ''} bg-primary/20 text-primary`}>
-                                                    <CheckCircle2 className="w-4 h-4" />
-                                                </div>
-                                            ) : (isToday || isSelected) ? (
-                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md ${isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-card' : ''} bg-primary text-primary-foreground`}>
-                                                    <span className="text-xs font-medium">{dayCompleted}/{dayTotal}</span>
+                                                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-sm">
+                                                    <CheckCircle2 className="w-5 h-5" />
                                                 </div>
                                             ) : someDone ? (
-                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-card' : ''} bg-primary/10 text-primary/70`}>
-                                                    <span className="text-xs font-medium">{dayCompleted}</span>
+                                                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary border border-primary/30">
+                                                    <span className="text-xs font-bold">{dayCompleted}</span>
                                                 </div>
                                             ) : (
-                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-card' : ''} bg-muted text-muted-foreground`}>
-                                                    {dayTotal > 0 && isPast ? '-' : ''}
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center border ${isSelected ? 'border-primary bg-primary/5' : 'border-border bg-muted/30'}`}>
+                                                    <span className="text-xs text-muted-foreground">{format(d, 'd')}</span>
                                                 </div>
                                             )}
                                         </button>

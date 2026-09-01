@@ -23,6 +23,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('habits.value');
 
     Route::get('/analytics', [HabitController::class, 'analytics'])->name('analytics');
+    Route::get('/calendar', [\App\Http\Controllers\CalendarController::class, 'index'])->name('calendar');
 
     // Notifications
     Route::post('/api/push-subscribe', [PushSubscriptionController::class, 'update'])->name('push.subscribe');

@@ -1,352 +1,191 @@
-import { Head, usePage } from '@inertiajs/react';
-import { type BreadcrumbItem, type SharedData } from '@/types';
-import { Flame, Award, Activity, Download } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Head } from '@inertiajs/react';
+import { 
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, 
+    PieChart, Pie, Cell, LineChart, Line, Legend
+} from 'recharts';
+import AppLayout from '@/layouts/app-layout';
+import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Analytics',
-        href: '/analytics',
-    },
+    { title: 'Analytics', href: '/analytics' },
 ];
 
-export default function Analytics() {
-    const { habits = [] } = usePage<SharedData & { habits?: any[] }>().props;
+export default function Analytics({ habits }: { habits: any[] }) {
+    // 1. Calculate overall completion rate (Active habits only)
+    const activeHabits = habits.filter(h => h.status === 'active');
+    
+    // For each habit, what is its success rate in the last 30 days?
+    let totalScheduled = 0;
+    let totalCompleted = 0;
+    
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+    thirtyDaysAgo.setHours(0,0,0,0);
+    
+    // Daily completion trend data
+    const dailyTrendMap: Record<string, { date: string; scheduled: number; completed: number }> = {};
+    for (let i = 29; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(today.getDate() - i);
+        const dateStr = d.toLocaleDateString('en-CA');
+        dailyTrendMap[dateStr] = { date: dateStr, scheduled: 0, completed: 0 };
+    }
 
-    let score = 0, streak = 0, last7DaysScores: any[] = [], heatmapData: any[] = [], categoryScores: any[] = [];
-    let errorMessage = null;
-    let errorStack = null;
-
-    try {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        // Helper to check if a habit is required on a specific Date
-        const isHabitRequiredOnDate = (habit: any, date: Date) => {
-            if (habit.start_date) {
-                const startDate = new Date(habit.start_date);
-                startDate.setHours(0, 0, 0, 0);
-                if (date < startDate) return false;
-            }
-
-            if (habit.frequency === 'daily') return true;
-            if (habit.frequency === 'weekly' && habit.days_of_week) {
-                // PHP/JS day of week mapping: JS 0 is Sunday, PHP 0 is Sunday.
-                return Array.isArray(habit.days_of_week) ? habit.days_of_week.includes(date.getDay().toString()) : habit.days_of_week.includes(date.getDay().toString());
-            }
-            return false;
-        };
-
-        const getHabitCompletion = (habit: any, dateStr: string) => {
-            return habit.completions?.find((c: any) => (c.completed_on ? new Date(c.completed_on).toLocaleDateString('en-CA') : '') === dateStr);
-        };
-
-        // 1. Calculate Score over last 30 days
-        let totalRequired30 = 0;
-        let totalCompleted30 = 0;
-        const past30Dates: Date[] = [];
-        for (let i = 29; i >= 0; i--) {
-            const d = new Date(today);
-            d.setDate(d.getDate() - i);
-            past30Dates.push(d);
-        }
-
-        past30Dates.forEach(date => {
-            const dateStr = date.toLocaleDateString('en-CA');
-            habits.forEach(habit => {
-                if (isHabitRequiredOnDate(habit, date)) {
-                    totalRequired30++;
-                    if (getHabitCompletion(habit, dateStr)) {
-                        totalCompleted30++;
-                    }
-                }
-            });
-        });
-
-        score = totalRequired30 > 0 ? Math.round((totalCompleted30 / totalRequired30) * 100) : 0;
-
-        // 2. Calculate Streak (days in a row ALL required habits were met, up to today)
-        let currentStreak = 0;
-        for (let i = 0; i < 30; i++) {
-            const d = new Date(today);
-            d.setDate(d.getDate() - i);
-            const dateStr = d.toLocaleDateString('en-CA');
-            
-            let reqCount = 0;
-            let compCount = 0;
-            habits.forEach(habit => {
-                if (isHabitRequiredOnDate(habit, d)) {
-                    reqCount++;
-                    if (getHabitCompletion(habit, dateStr)) {
-                        compCount++;
-                    }
-                }
-            });
-
-            if (reqCount > 0 && compCount === reqCount) {
-                currentStreak++;
-            } else if (reqCount > 0 && compCount < reqCount) {
-                // If today is missed, maybe they just haven't done it yet. But if yesterday missed, streak broken.
-                if (i > 0) break; 
-            }
-        }
-        streak = currentStreak;
-
-        // 3. Completion Over Time (dynamic timeframe)
-        // We will calculate for all 30 days, then slice in the render phase
-        const all30DaysScores = past30Dates.map(date => {
-            const dateStr = date.toLocaleDateString('en-CA');
-            let req = 0;
-            let comp = 0;
-            habits.forEach(habit => {
-                if (isHabitRequiredOnDate(habit, date)) {
-                    req++;
-                    if (getHabitCompletion(habit, dateStr)) comp++;
-                }
-            });
-            return {
-                day: date.toLocaleDateString('en-US', { weekday: 'short' }),
-                date: date.getDate(),
-                score: req > 0 ? Math.round((comp / req) * 100) : 0
-            };
-        });
-
-        last7DaysScores = all30DaysScores; // We'll rename and slice this in the component body
-
-        // 4. Heatmap Data (Last 28 Days for a 4x7 grid usually, or just 30 days)
-        // Let's take last 28 days to fit perfectly in a 7-column grid
-        heatmapData = all30DaysScores.slice(-28).map(d => d.score);
-
-        // 5. Category Breakdown (30 Days)
-        const catMap = new Map();
-        habits.forEach(habit => {
-            if (!habit.category) return;
-            let req = 0;
-            let comp = 0;
-            past30Dates.forEach(date => {
-                const dateStr = date.toLocaleDateString('en-CA');
-                if (isHabitRequiredOnDate(habit, date)) {
-                    req++;
-                    if (getHabitCompletion(habit, dateStr)) comp++;
-                }
-            });
-            
-            if (req > 0) {
-                if (!catMap.has(habit.category)) catMap.set(habit.category, { req: 0, comp: 0 });
-                const current = catMap.get(habit.category);
-                current.req += req;
-                current.comp += comp;
-            }
-        });
+    activeHabits.forEach(habit => {
+        const habitStart = new Date(habit.start_date.split('T')[0]);
         
-        categoryScores = Array.from(catMap.entries()).map(([name, data]) => ({
-            name,
-            score: Math.round((data.comp / data.req) * 100)
-        })).sort((a, b) => b.score - a.score);
+        // Populate daily trend
+        Object.keys(dailyTrendMap).forEach(dateStr => {
+            const d = new Date(dateStr);
+            if (d >= habitStart) {
+                let isScheduled = false;
+                if (habit.frequency === 'daily') {
+                    isScheduled = true;
+                } else if (habit.frequency === 'weekly' && Array.isArray(habit.days_of_week)) {
+                    isScheduled = habit.days_of_week.includes(d.getDay());
+                }
+                
+                if (isScheduled) {
+                    dailyTrendMap[dateStr].scheduled++;
+                    totalScheduled++;
+                    
+                    const comp = habit.completions.find((c: any) => c.completed_on.split('T')[0] === dateStr);
+                    if (comp) {
+                        let success = false;
+                        if (['binary', 'avoid'].includes(habit.type)) {
+                            success = true;
+                        } else {
+                            success = parseFloat(comp.value) >= (parseFloat(habit.target_value) || 1);
+                        }
+                        if (success) {
+                            dailyTrendMap[dateStr].completed++;
+                            totalCompleted++;
+                        }
+                    }
+                }
+            }
+        });
+    });
 
-    } catch (e: any) {
-        errorMessage = e.message;
-        errorStack = e.stack;
-    }
+    const dailyTrendData = Object.values(dailyTrendMap).map(d => ({
+        ...d,
+        rate: d.scheduled > 0 ? Math.round((d.completed / d.scheduled) * 100) : 0,
+        displayDate: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    }));
 
-    const [timeframe, setTimeframe] = useState<7 | 14 | 30>(7);
-    const chartScores = last7DaysScores.slice(-timeframe);
+    const completionRate = totalScheduled > 0 ? Math.round((totalCompleted / totalScheduled) * 100) : 0;
+    
+    const pieData = [
+        { name: 'Completed', value: totalCompleted, color: 'var(--primary)' },
+        { name: 'Missed', value: totalScheduled - totalCompleted, color: 'var(--destructive)' }
+    ];
 
-    if (errorMessage) {
-        return (
-            <div className="p-8 max-w-3xl mx-auto mt-10 bg-red-950/30 border border-red-500 rounded-xl text-red-500">
-                <h2 className="text-xl font-bold mb-4">React Render Error</h2>
-                <p className="font-mono text-sm mb-4">{errorMessage}</p>
-                <pre className="font-mono text-xs overflow-auto p-4 bg-black/50 rounded">{errorStack}</pre>
-            </div>
-        );
-    }
-
-    const circumference = 2 * Math.PI * 40; // r=40
-    const strokeDashoffset = circumference - (score / 100) * circumference;
-
-    const colors = ['bg-primary', 'bg-blue-500', 'bg-indigo-500', 'bg-rose-500', 'bg-amber-500'];
+    // Find top streaks
+    const topStreaks = [...habits].sort((a, b) => (b.current_streak || 0) - (a.current_streak || 0)).slice(0, 5);
 
     return (
         <>
             <Head title="Analytics" />
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full">
-                {/* Export Button */}
-                <div className="flex justify-end mb-4">
-                    <a 
-                        href="/habits/export" 
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors shadow-sm"
-                    >
-                        <Download className="w-4 h-4" />
-                        Export CSV
-                    </a>
+            <div className="flex-1 overflow-y-auto px-4 md:px-8 max-w-7xl w-full mx-auto py-6">
+                <div className="mb-8">
+                    <h2 className="text-2xl font-bold text-foreground">Analytics & Insights</h2>
+                    <p className="text-base text-muted-foreground mt-1">
+                        Track your performance over the last 30 days.
+                    </p>
                 </div>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Hero Stat / Overview */}
-                    <div className="lg:col-span-2 bg-card/80 backdrop-blur-md border border-border rounded-xl p-6 shadow-sm relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-50"></div>
-                        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                            <div>
-                                <h2 className="text-xs font-semibold text-muted-foreground tracking-wider uppercase mb-1">Consistency Score</h2>
-                                <div className="text-5xl font-bold text-foreground flex items-baseline gap-2">
-                                    {score}<span className="text-2xl font-normal text-muted-foreground">%</span>
-                                </div>
-                                <p className="text-sm text-muted-foreground mt-2">Based on your activity over the last 30 days. Keep the momentum going!</p>
-                            </div>
-                            
-                            {/* Simple Progress Ring Visualization */}
-                            <div className="relative w-32 h-32 shrink-0">
-                                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                                    <circle cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" className="text-muted" strokeLinecap="round" strokeWidth="8"></circle>
-                                    <circle 
-                                        className="transition-all duration-1000 ease-out text-primary" 
-                                        cx="50" cy="50" fill="transparent" r="40" 
-                                        stroke="currentColor" 
-                                        strokeDasharray={circumference} 
-                                        strokeDashoffset={strokeDashoffset} 
-                                        strokeLinecap="round" strokeWidth="8"
-                                    ></circle>
-                                </svg>
-                                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <Flame className={`w-8 h-8 ${streak > 0 ? 'text-primary' : 'text-muted-foreground'}`} />
-                                    <span className="text-xs font-bold text-muted-foreground mt-1">{streak} Days</span>
-                                </div>
-                            </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    {/* Key Metrics */}
+                    <div className="bg-card border border-border rounded-xl p-6 shadow-sm flex flex-col justify-center items-center text-center">
+                        <h3 className="text-sm font-medium text-muted-foreground mb-2">Overall Completion Rate</h3>
+                        <div className="text-5xl font-bold text-primary">{completionRate}%</div>
+                        <p className="text-xs text-muted-foreground mt-2">{totalCompleted} of {totalScheduled} habits completed</p>
+                    </div>
+                    
+                    <div className="bg-card border border-border rounded-xl p-6 shadow-sm flex flex-col justify-center items-center">
+                        <h3 className="text-sm font-medium text-muted-foreground mb-4">Success Ratio</h3>
+                        <div className="h-[120px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={pieData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={40}
+                                        outerRadius={60}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                    >
+                                        {pieData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                    <RechartsTooltip />
+                                </PieChart>
+                            </ResponsiveContainer>
                         </div>
                     </div>
 
-                    {/* Monthly Wins */}
                     <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-                        <h3 className="text-lg font-semibold text-foreground mb-4">Monthly Wins</h3>
-                        <div className="space-y-4">
-                            {score >= 80 ? (
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                                        <Award className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <h4 className="text-sm font-medium text-foreground">High Achiever</h4>
-                                        <p className="text-xs text-muted-foreground">&gt;80% consistency this month</p>
-                                    </div>
-                                </div>
-                            ) : null}
-                            
-                            {streak >= 7 ? (
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 shrink-0">
-                                        <Activity className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <h4 className="text-sm font-medium text-foreground">Perfect Week</h4>
-                                        <p className="text-xs text-muted-foreground">7+ day streak active</p>
+                        <h3 className="text-sm font-medium text-muted-foreground mb-4">Top Streaks 🔥</h3>
+                        <div className="space-y-3">
+                            {topStreaks.length > 0 ? topStreaks.map(h => (
+                                <div key={h.id} className="flex justify-between items-center">
+                                    <span className="text-sm font-medium truncate w-32">{h.name}</span>
+                                    <div className="flex items-center space-x-2">
+                                        <span className="text-xs text-muted-foreground">Best: {h.longest_streak}</span>
+                                        <span className="px-2 py-1 bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400 rounded-full text-xs font-bold">
+                                            {h.current_streak} days
+                                        </span>
                                     </div>
                                 </div>
-                            ) : null}
-
-                            {score < 80 && streak < 7 ? (
-                                <p className="text-sm text-muted-foreground">Keep checking in daily to unlock achievements!</p>
-                            ) : null}
-                        </div>
-                    </div>
-
-                    {/* Habit Completion Line Chart */}
-                    <div className="lg:col-span-2 bg-card border border-border rounded-xl p-6 shadow-sm flex flex-col">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-lg font-semibold text-foreground">Completion Over Time</h3>
-                            <select 
-                                value={timeframe} 
-                                onChange={(e) => setTimeframe(Number(e.target.value) as 7 | 14 | 30)}
-                                className="bg-muted border-none text-sm font-medium text-foreground rounded-lg focus:ring-2 focus:ring-primary cursor-pointer"
-                            >
-                                <option value={7}>Last 7 Days</option>
-                                <option value={14}>Last 14 Days</option>
-                                <option value={30}>Last 30 Days</option>
-                            </select>
-                        </div>
-
-                        {/* Chart Visualization */}
-                        <div className="flex-1 relative min-h-[200px] w-full flex items-end justify-between pt-8 pb-4 pr-2 pl-12 border-b border-l border-border">
-                            {/* Y-Axis Labels */}
-                            <div className="absolute left-2 top-0 bottom-0 flex flex-col justify-between text-xs text-muted-foreground py-4 z-10">
-                                <span>100</span>
-                                <span>50</span>
-                                <span>0</span>
-                            </div>
-
-                            {/* Grid Lines */}
-                            <div className="absolute inset-0 flex flex-col justify-between py-4 pointer-events-none">
-                                <div className="w-full h-px bg-border opacity-50"></div>
-                                <div className="w-full h-px bg-border opacity-50"></div>
-                                <div className="w-full h-px bg-border opacity-50"></div>
-                            </div>
-
-                            {/* Data Points */}
-                            <div className="relative w-full h-full flex items-end justify-between px-4 z-10">
-                                {chartScores.map((data, i) => (
-                                    <div key={i} className={`w-3 rounded-t-full relative group transition-colors ${data.score >= 90 ? 'bg-primary shadow-[0_0_10px_var(--color-primary)]' : (data.score > 0 ? 'bg-primary/50 hover:bg-primary' : 'bg-muted')}`} style={{ height: `${Math.max(data.score, 5)}%` }}>
-                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-foreground text-background text-xs px-2 py-1 rounded whitespace-nowrap z-20">
-                                            {data.score}%
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* X-Axis Labels */}
-                        <div className="flex justify-between text-xs text-muted-foreground mt-2 px-6">
-                            {chartScores.map((data, i) => (
-                                <span key={i} className="text-[10px] sm:text-xs">
-                                    {timeframe === 30 && i % 3 !== 0 ? '' : (timeframe > 7 ? data.date : data.day)}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Consistency Heatmap */}
-                    <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-                        <h3 className="text-lg font-semibold text-foreground mb-4">Consistency Heatmap</h3>
-                        <div className="grid grid-cols-7 gap-2">
-                            {heatmapData.map((val, i) => (
-                                <div key={i} className={`w-full aspect-square rounded-sm ${val === 0 ? 'bg-muted' : 'bg-primary'}`} style={{ opacity: val === 0 ? 1 : Math.max(0.2, val / 100) }}></div>
-                            ))}
-                        </div>
-                        <div className="flex items-center justify-end gap-2 mt-4 text-xs text-muted-foreground">
-                            <span>Less</span>
-                            <div className="flex gap-1">
-                                <div className="w-3 h-3 rounded-sm bg-muted"></div>
-                                <div className="w-3 h-3 rounded-sm bg-primary opacity-40"></div>
-                                <div className="w-3 h-3 rounded-sm bg-primary opacity-80"></div>
-                                <div className="w-3 h-3 rounded-sm bg-primary opacity-100"></div>
-                            </div>
-                            <span>More</span>
-                        </div>
-                    </div>
-
-                    {/* Category Breakdown */}
-                    <div className="lg:col-span-3 bg-card border border-border rounded-xl p-6 shadow-sm">
-                        <h3 className="text-lg font-semibold text-foreground mb-4">Category Breakdown (30 Days)</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {categoryScores.length > 0 ? categoryScores.map((cat, i) => {
-                                const colorClass = colors[i % colors.length];
-                                return (
-                                    <div key={i}>
-                                        <div className="flex justify-between text-sm font-medium mb-2">
-                                            <span className="text-foreground flex items-center gap-2">
-                                                <span className={`w-2 h-2 rounded-full ${colorClass} inline-block`}></span> {cat.name}
-                                            </span>
-                                            <span className="text-muted-foreground">{cat.score}%</span>
-                                        </div>
-                                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                                            <div className={`h-full ${colorClass} rounded-full`} style={{ width: `${cat.score}%` }}></div>
-                                        </div>
-                                    </div>
-                                )
-                            }) : (
-                                <div className="col-span-3 text-sm text-muted-foreground text-center py-4">No data available yet.</div>
+                            )) : (
+                                <p className="text-sm text-muted-foreground text-center py-4">No active streaks.</p>
                             )}
                         </div>
                     </div>
+                </div>
 
+                {/* Charts */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+                        <h3 className="text-lg font-semibold mb-6">Daily Completion Volume</h3>
+                        <div className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={dailyTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                                    <XAxis dataKey="displayDate" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
+                                    <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" allowDecimals={false} />
+                                    <RechartsTooltip 
+                                        contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '8px' }}
+                                        itemStyle={{ color: 'var(--foreground)' }}
+                                    />
+                                    <Legend />
+                                    <Bar dataKey="completed" name="Completed" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="scheduled" name="Scheduled" fill="var(--muted)" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+                        <h3 className="text-lg font-semibold mb-6">Daily Success Rate (%)</h3>
+                        <div className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={dailyTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                                    <XAxis dataKey="displayDate" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
+                                    <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" domain={[0, 100]} />
+                                    <RechartsTooltip 
+                                        contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '8px' }}
+                                    />
+                                    <Line type="monotone" dataKey="rate" name="Success Rate %" stroke="var(--primary)" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
                 </div>
             </div>
         </>
