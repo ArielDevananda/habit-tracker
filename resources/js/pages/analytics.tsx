@@ -3,7 +3,7 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, 
     PieChart, Pie, Cell, LineChart, Line, Legend
 } from 'recharts';
-import AppLayout from '@/layouts/app-layout';
+
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -26,6 +26,7 @@ export default function Analytics({ habits }: { habits: any[] }) {
     
     // Daily completion trend data
     const dailyTrendMap: Record<string, { date: string; scheduled: number; completed: number }> = {};
+
     for (let i = 29; i >= 0; i--) {
         const d = new Date();
         d.setDate(today.getDate() - i);
@@ -39,8 +40,10 @@ export default function Analytics({ habits }: { habits: any[] }) {
         // Populate daily trend
         Object.keys(dailyTrendMap).forEach(dateStr => {
             const d = new Date(dateStr);
+
             if (d >= habitStart) {
                 let isScheduled = false;
+
                 if (habit.frequency === 'daily') {
                     isScheduled = true;
                 } else if (habit.frequency === 'weekly' && Array.isArray(habit.days_of_week)) {
@@ -52,13 +55,16 @@ export default function Analytics({ habits }: { habits: any[] }) {
                     totalScheduled++;
                     
                     const comp = habit.completions.find((c: any) => c.completed_on.split('T')[0] === dateStr);
+
                     if (comp) {
                         let success = false;
+
                         if (['binary', 'avoid'].includes(habit.type)) {
                             success = true;
                         } else {
                             success = parseFloat(comp.value) >= (parseFloat(habit.target_value) || 1);
                         }
+
                         if (success) {
                             dailyTrendMap[dateStr].completed++;
                             totalCompleted++;

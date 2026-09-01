@@ -1,17 +1,14 @@
+import axios from 'axios';
+import { Bell, Check } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { Bell, Check, Trash2, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import axios from 'axios';
-import { Link } from '@inertiajs/react';
-import { toast } from 'sonner';
 
 interface NotificationData {
     id: string;
@@ -29,7 +26,18 @@ export function NotificationBell() {
     const [unreadCount, setUnreadCount] = useState(0);
     const [isPushEnabled, setIsPushEnabled] = useState(false);
 
+    const fetchNotifications = async () => {
+        try {
+            const res = await axios.get('/api/notifications/unread');
+            setNotifications(res.data.notifications);
+            setUnreadCount(res.data.unread_count);
+        } catch (error) {
+            console.error("Failed to fetch notifications", error);
+        }
+    };
+
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         fetchNotifications();
         
         // Polling every 60 seconds (optional)
@@ -43,19 +51,10 @@ export function NotificationBell() {
         return () => clearInterval(interval);
     }, []);
 
-    const fetchNotifications = async () => {
-        try {
-            const res = await axios.get('/api/notifications/unread');
-            setNotifications(res.data.notifications);
-            setUnreadCount(res.data.unread_count);
-        } catch (error) {
-            console.error("Failed to fetch notifications", error);
-        }
-    };
-
     const markAsRead = async (id: string, e: React.MouseEvent) => {
         e.preventDefault(); // Prevent dropdown from closing
         e.stopPropagation();
+
         try {
             await axios.post(`/api/notifications/${id}/read`);
             // Update local state
@@ -71,6 +70,7 @@ export function NotificationBell() {
     const markAllAsRead = async (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
+
         try {
             await axios.post('/api/notifications/read-all');
             setNotifications(notifications.map(n => ({ ...n, read_at: new Date().toISOString() })));
@@ -82,28 +82,37 @@ export function NotificationBell() {
 
     const urlBase64ToUint8Array = (base64String: string) => {
         const padding = '='.repeat((4 - base64String.length % 4) % 4);
-        const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
         const rawData = window.atob(base64);
         const outputArray = new Uint8Array(rawData.length);
+
         for (let i = 0; i < rawData.length; ++i) {
             outputArray[i] = rawData.charCodeAt(i);
         }
+
         return outputArray;
     };
 
     const subscribeToPush = async () => {
-        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+return;
+}
         
         try {
             const permission = await Notification.requestPermission();
+
             if (permission !== 'granted') {
                 toast.error('Notification permission denied.');
+
                 return;
             }
 
             const registration = await navigator.serviceWorker.ready;
             const vapidPublicKey = document.querySelector('meta[name="vapid-public-key"]')?.getAttribute('content');
-            if (!vapidPublicKey) return;
+
+            if (!vapidPublicKey) {
+return;
+}
 
             const subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,

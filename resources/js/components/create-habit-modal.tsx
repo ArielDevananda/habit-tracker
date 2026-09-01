@@ -1,12 +1,10 @@
-import { useState } from 'react';
 import { useForm } from '@inertiajs/react';
+import { Plus } from 'lucide-react';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
 
 const DAYS = [
     { value: 1, label: 'Mon' },
@@ -49,6 +47,7 @@ export function CreateHabitModal({ children }: { children?: React.ReactNode }) {
 
     const toggleDay = (day: number) => {
         const currentDays = [...data.days_of_week];
+
         if (currentDays.includes(day)) {
             setData('days_of_week', currentDays.filter(d => d !== day));
         } else {
@@ -146,6 +145,7 @@ export function CreateHabitModal({ children }: { children?: React.ReactNode }) {
                             <div className="flex flex-wrap gap-2">
                                 {DAYS.map((day) => {
                                     const isSelected = data.days_of_week.includes(day.value);
+
                                     return (
                                         <button
                                             key={day.value}

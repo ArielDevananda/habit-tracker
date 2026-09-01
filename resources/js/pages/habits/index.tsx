@@ -1,8 +1,8 @@
+import { Head, Link } from '@inertiajs/react';
+import { Flame } from 'lucide-react';
 import { useState } from 'react';
-import { Head, router, Link } from '@inertiajs/react';
-import { Trash2, Flame } from 'lucide-react';
-import { EditHabitModal } from '@/components/edit-habit-modal';
 import { DeleteHabitModal } from '@/components/delete-habit-modal';
+import { EditHabitModal } from '@/components/edit-habit-modal';
 
 export default function HabitsIndex({ habits = [] }: { habits?: any[] }) {
     const [activeFilter, setActiveFilter] = useState('All');
@@ -16,6 +16,7 @@ export default function HabitsIndex({ habits = [] }: { habits?: any[] }) {
     const filteredHabits = habits.filter(h => {
         const matchesCategory = activeFilter === 'All' || h.category === activeFilter;
         const matchesStatus = h.status === statusFilter;
+
         return matchesCategory && matchesStatus;
     });
 
@@ -24,12 +25,15 @@ export default function HabitsIndex({ habits = [] }: { habits?: any[] }) {
         if (sortBy === 'streak') {
             return (b.completions_count || 0) - (a.completions_count || 0);
         }
+
         if (sortBy === 'name') {
             return (a.name || '').localeCompare(b.name || '');
         }
+
         if (sortBy === 'recent') {
             return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
         }
+
         return 0;
     });
 
@@ -99,7 +103,9 @@ export default function HabitsIndex({ habits = [] }: { habits?: any[] }) {
                         sortedHabits.map((habit: any) => (
                             <Link key={habit.id} href={`/habits/${habit.id}`} className="block">
                             <article className="bg-card rounded-xl p-6 shadow-sm flex flex-col sm:flex-row gap-6 relative group border border-border hover:-translate-y-0.5 hover:shadow-md transition-all cursor-pointer">
-                                <div className="absolute top-4 right-4 opacity-0 sm:group-hover:opacity-100 transition-opacity flex gap-2" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                                <div className="absolute top-4 right-4 opacity-0 sm:group-hover:opacity-100 transition-opacity flex gap-2" onClick={(e) => {
+ e.preventDefault(); e.stopPropagation(); 
+}}>
                                     <EditHabitModal habit={habit} />
                                     <DeleteHabitModal habit={habit} />
                                 </div>

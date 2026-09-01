@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, Flame, Calendar, Target, TrendingUp, CheckCircle2 } from 'lucide-react';
-import { type BreadcrumbItem } from '@/types';
+import type {BreadcrumbItem} from '@/types';
 
 type HabitCompletion = {
     id: number;
@@ -47,8 +47,10 @@ export default function HabitShow({ habit }: { habit: Habit }) {
         const dateStr = d.toLocaleDateString('en-CA');
         const completed = habit.completions.some(c => {
             const cDate = new Date(c.completed_on).toLocaleDateString('en-CA');
+
             return cDate === dateStr;
         });
+
         return {
             date: d,
             dateStr,
@@ -60,12 +62,16 @@ export default function HabitShow({ habit }: { habit: Habit }) {
 
     // Calculate current streak
     let streak = 0;
+
     for (let i = last30Days.length - 1; i >= 0; i--) {
         if (last30Days[i].completed) {
             streak++;
         } else {
             // If today and not completed, don't break (user might not have done it yet)
-            if (i === last30Days.length - 1) continue;
+            if (i === last30Days.length - 1) {
+continue;
+}
+
             break;
         }
     }
@@ -73,10 +79,14 @@ export default function HabitShow({ habit }: { habit: Habit }) {
     // Best streak in last 30 days
     let bestStreak = 0;
     let currentRun = 0;
+
     for (const day of last30Days) {
         if (day.completed) {
             currentRun++;
-            if (currentRun > bestStreak) bestStreak = currentRun;
+
+            if (currentRun > bestStreak) {
+bestStreak = currentRun;
+}
         } else {
             currentRun = 0;
         }
@@ -202,6 +212,7 @@ export default function HabitShow({ habit }: { habit: Habit }) {
                         <div className="space-y-3">
                             {recentCompletions.map((completion) => {
                                 const d = new Date(completion.completed_on);
+
                                 return (
                                     <div key={completion.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                                         <div className="flex items-center gap-3">

@@ -1,10 +1,10 @@
 import { Head, usePage, router } from '@inertiajs/react';
-import { useState } from 'react';
-import { dashboard } from '@/routes';
-import { Flame, CheckCircle2 } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
-import { CreateHabitModal } from '@/components/create-habit-modal';
 import { startOfWeek, addDays, format, isSameDay, startOfDay } from 'date-fns';
+import { Flame, CheckCircle2 } from 'lucide-react';
+import { useState } from 'react';
+import { CreateHabitModal } from '@/components/create-habit-modal';
+import { Checkbox } from '@/components/ui/checkbox';
+import { dashboard } from '@/routes';
 import type { Auth } from '@/types/auth';
 
 type HabitCompletion = {
@@ -34,15 +34,19 @@ const HabitProgressInput = ({ habit, selectedDate, currentValue }: any) => {
     const [val, setVal] = useState(currentValue.toString());
     
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setVal(currentValue.toString());
     }, [currentValue]);
 
     const handleUpdate = () => {
         const num = parseFloat(val);
+
         if (isNaN(num)) {
             setVal(currentValue.toString());
+
             return;
         }
+
         if (num !== currentValue) {
             router.post(`/habits/${habit.id}/value`, { 
                 date: selectedDate, 
@@ -79,6 +83,7 @@ export default function Dashboard({ habits = [] }: { habits?: Habit[] }) {
         const completion = habit.completions.find((c: any) => {
             return c.completed_on.split('T')[0] === date;
         });
+
         return completion ? parseFloat(completion.value || habit.target_value || 1) : 0;
     };
 
@@ -86,6 +91,7 @@ export default function Dashboard({ habits = [] }: { habits?: Habit[] }) {
         if (habit.type === 'binary' || habit.type === 'avoid') {
             return habit.completions.some((c: any) => c.completed_on.split('T')[0] === date);
         }
+
         return getCompletionValue(habit, date) >= parseFloat(habit.target_value || 1);
     };
 
@@ -93,13 +99,20 @@ export default function Dashboard({ habits = [] }: { habits?: Habit[] }) {
 
     // Helper to check if a habit should be done on a specific date string (YYYY-MM-DD)
     const isHabitTargetedForDate = (habit: any, dateStr: string) => {
-        if (habit.status !== 'active') return false;
+        if (habit.status !== 'active') {
+return false;
+}
         
         // Ensure habit has started
         const habitStartDate = habit.start_date ? habit.start_date.split('T')[0] : '';
-        if (habitStartDate > dateStr) return false;
+
+        if (habitStartDate > dateStr) {
+return false;
+}
         
-        if (habit.frequency === 'daily') return true;
+        if (habit.frequency === 'daily') {
+return true;
+}
         
         if (habit.frequency === 'weekly' && habit.days_of_week) {
             // Get day of week (0-6) for the target date
@@ -172,6 +185,7 @@ export default function Dashboard({ habits = [] }: { habits?: Habit[] }) {
                         ) : (
                             activeHabitsForSelectedDate.map((habit) => {
                                 const completed = isCompletedToday(habit);
+
                                 return (
                                     <div key={habit.id} className={`bg-card rounded-xl p-4 md:p-6 shadow-sm border border-border flex items-center justify-between border-l-4 transition-colors ${completed ? 'border-l-primary' : 'border-l-transparent hover:border-l-border'}`}>
                                         <div className="flex items-center space-x-4">

@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
+import { Edit } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Edit } from 'lucide-react';
 
 const DAYS = [
     { value: 1, label: 'Mon' },
@@ -39,6 +39,7 @@ export function EditHabitModal({ habit, children }: { habit: any, children?: Rea
 
     useEffect(() => {
         if (open) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setDataState({
                 name: habit.name || '',
                 category: habit.category || '',
@@ -90,6 +91,7 @@ export function EditHabitModal({ habit, children }: { habit: any, children?: Rea
 
     const toggleDay = (day: number) => {
         const currentDays = [...data.days_of_week];
+
         if (currentDays.includes(day)) {
             setDataState(prev => ({ ...prev, days_of_week: currentDays.filter(d => d !== day) }));
         } else {
@@ -220,6 +222,7 @@ export function EditHabitModal({ habit, children }: { habit: any, children?: Rea
                                 <div className="flex flex-wrap gap-2">
                                     {DAYS.map((day) => {
                                         const isSelected = data.days_of_week.includes(day.value);
+
                                         return (
                                             <button
                                                 key={day.value}

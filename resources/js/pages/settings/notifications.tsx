@@ -1,9 +1,9 @@
 import { Head } from '@inertiajs/react';
+import axios from 'axios';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import Heading from '@/components/heading';
 import { Label } from '@/components/ui/label';
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { toast } from 'sonner';
 
 export default function Notifications() {
     const [isPushEnabled, setIsPushEnabled] = useState(false);
@@ -22,12 +22,14 @@ export default function Notifications() {
 
     const urlBase64ToUint8Array = (base64String: string) => {
         const padding = '='.repeat((4 - base64String.length % 4) % 4);
-        const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
         const rawData = window.atob(base64);
         const outputArray = new Uint8Array(rawData.length);
+
         for (let i = 0; i < rawData.length; ++i) {
             outputArray[i] = rawData.charCodeAt(i);
         }
+
         return outputArray;
     };
 
@@ -38,17 +40,21 @@ export default function Notifications() {
             // Enable Push Notifications
             try {
                 const permission = await Notification.requestPermission();
+
                 if (permission !== 'granted') {
                     toast.error('Notification permission denied. Please enable it in your browser settings.');
                     setIsLoading(false);
+
                     return;
                 }
 
                 const registration = await navigator.serviceWorker.ready;
                 const vapidPublicKey = document.querySelector('meta[name="vapid-public-key"]')?.getAttribute('content');
+
                 if (!vapidPublicKey) {
                     console.error("VAPID key not found");
                     setIsLoading(false);
+
                     return;
                 }
 

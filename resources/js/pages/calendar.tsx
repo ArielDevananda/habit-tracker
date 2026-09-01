@@ -1,7 +1,6 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { format, getDaysInMonth, startOfMonth, getDay, addMonths, subMonths } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -24,10 +23,12 @@ export default function Calendar({ habits, currentYear, currentMonth }: any) {
     };
 
     const days = [];
+
     // Padding for first row
     for (let i = 0; i < startDayOfWeek; i++) {
         days.push(null);
     }
+
     for (let i = 1; i <= daysInMonth; i++) {
         days.push(new Date(currentYear, currentMonth - 1, i));
     }
@@ -77,12 +78,19 @@ export default function Calendar({ habits, currentYear, currentMonth }: any) {
                             
                             const scheduledHabits = habits.filter((h: any) => {
                                 const habitStart = new Date(h.start_date.split('T')[0]);
-                                if (date < habitStart) return false;
+
+                                if (date < habitStart) {
+return false;
+}
                                 
-                                if (h.frequency === 'daily') return true;
+                                if (h.frequency === 'daily') {
+return true;
+}
+
                                 if (h.frequency === 'weekly' && Array.isArray(h.days_of_week)) {
                                     return h.days_of_week.includes(date.getDay());
                                 }
+
                                 return false;
                             });
                             
@@ -96,8 +104,15 @@ export default function Calendar({ habits, currentYear, currentMonth }: any) {
                                             <span className="text-xs text-muted-foreground font-medium">
                                                 {scheduledHabits.filter((h: any) => {
                                                     const comp = h.completions.find((c: any) => c.completed_on.split('T')[0] === dateStr);
-                                                    if (!comp) return false;
-                                                    if (['binary', 'avoid'].includes(h.type)) return true;
+
+                                                    if (!comp) {
+return false;
+}
+
+                                                    if (['binary', 'avoid'].includes(h.type)) {
+return true;
+}
+
                                                     return parseFloat(comp.value) >= (parseFloat(h.target_value) || 1);
                                                 }).length}/{scheduledHabits.length}
                                             </span>
@@ -108,6 +123,7 @@ export default function Calendar({ habits, currentYear, currentMonth }: any) {
                                         {scheduledHabits.map((h: any) => {
                                             const comp = h.completions.find((c: any) => c.completed_on.split('T')[0] === dateStr);
                                             let isSuccess = false;
+
                                             if (comp) {
                                                 if (['binary', 'avoid'].includes(h.type)) {
                                                     isSuccess = true;
@@ -117,6 +133,7 @@ export default function Calendar({ habits, currentYear, currentMonth }: any) {
                                             }
                                             
                                             const isFuture = dateStr > todayStr;
+
                                             if (isFuture) {
                                                 return (
                                                     <div key={h.id} className="text-[10px] truncate px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-transparent">
