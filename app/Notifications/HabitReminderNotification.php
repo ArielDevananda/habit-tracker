@@ -6,14 +6,18 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use NotificationChannels\WebPush\WebPushChannel;
+use NotificationChannels\WebPush\WebPushMessage;
 
 class HabitReminderNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public $message;
-    public $url;
-    public $typeStr;
+    public string $message;
+
+    public string $url;
+
+    public string $typeStr;
 
     /**
      * Create a new notification instance.
@@ -32,15 +36,15 @@ class HabitReminderNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return ['database', \NotificationChannels\WebPush\WebPushChannel::class];
+        return ['database', WebPushChannel::class];
     }
 
     /**
      * Get the web push representation of the notification.
      */
-    public function toWebPush($notifiable, $notification)
+    public function toWebPush(object $notifiable, Notification $notification): WebPushMessage
     {
-        return (new \NotificationChannels\WebPush\WebPushMessage)
+        return (new WebPushMessage)
             ->title('Habit Reminder')
             ->icon('/apple-touch-icon.png')
             ->body($this->message)
@@ -54,9 +58,9 @@ class HabitReminderNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-                    ->line('The introduction to the notification.')
-                    ->action('Notification Action', url('/'))
-                    ->line('Thank you for using our application!');
+            ->line('The introduction to the notification.')
+            ->action('Notification Action', url('/'))
+            ->line('Thank you for using our application!');
     }
 
     /**

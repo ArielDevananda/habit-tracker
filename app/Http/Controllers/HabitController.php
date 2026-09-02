@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreHabitRequest;
 use App\Http\Requests\UpdateHabitRequest;
 use App\Models\Habit;
+use App\Models\HabitCompletion;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -41,7 +41,7 @@ class HabitController extends Controller
                 'longest_streak',
             ])
             ->with([
-                'completions' => fn (HasMany $query) => $query
+                'completions' => fn ($query) => $query
                     ->select([
                         'id',
                         'habit_id',
@@ -104,7 +104,7 @@ class HabitController extends Controller
         Gate::authorize('view', $habit);
 
         $habit->load([
-            'completions' => fn (HasMany $query) => $query
+            'completions' => fn ($query) => $query
                 ->select([
                     'id',
                     'habit_id',
@@ -275,7 +275,7 @@ class HabitController extends Controller
                 'longest_streak',
             ])
             ->with([
-                'completions' => fn (HasMany $query) => $query
+                'completions' => fn ($query) => $query
                     ->select([
                         'id',
                         'habit_id',
@@ -305,18 +305,24 @@ class HabitController extends Controller
 
         $habits = $request->user()
             ->habits()
-            ->with(['completions' => fn (HasMany $query) => $query->oldest('completed_on')])
+            ->with(['completions' => fn ($query) => $query->oldest('completed_on')])
             ->get();
 
         $fileName = 'habit-tracker-export-'.now()->format('Y-m-d').'.csv';
 
-        return response()->streamDownload(function () use ($habits) {
+        return response()->streamDownload(function () use ($habits): void {
             $handle = fopen('php://output', 'w');
+
+            if ($handle === false) {
+                return;
+            }
 
             // CSV Header
             fputcsv($handle, ['Habit Name', 'Category', 'Frequency', 'Completed On', 'Value', 'Note']);
 
+            /** @var Habit $habit */
             foreach ($habits as $habit) {
+                /** @var HabitCompletion $completion */
                 foreach ($habit->completions as $completion) {
                     fputcsv($handle, [
                         $habit->name,

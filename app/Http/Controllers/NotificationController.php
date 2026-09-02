@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
@@ -13,6 +13,7 @@ class NotificationController extends Controller
     public function unread(Request $request): JsonResponse
     {
         $notifications = $request->user()->unreadNotifications()->latest()->take(10)->get();
+
         return response()->json([
             'notifications' => $notifications,
             'unread_count' => $request->user()->unreadNotifications()->count(),
@@ -22,10 +23,11 @@ class NotificationController extends Controller
     /**
      * Mark a specific notification as read.
      */
-    public function markAsRead(Request $request, $id): JsonResponse
+    public function markAsRead(Request $request, string $id): JsonResponse
     {
         $notification = $request->user()->notifications()->findOrFail($id);
         $notification->markAsRead();
+
         return response()->json(['status' => 'success']);
     }
 
@@ -35,6 +37,7 @@ class NotificationController extends Controller
     public function markAllAsRead(Request $request): JsonResponse
     {
         $request->user()->unreadNotifications->markAsRead();
+
         return response()->json(['status' => 'success']);
     }
 }

@@ -25,7 +25,7 @@ class SendHabitReminders extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(): void
     {
         $today = today();
 
@@ -49,7 +49,7 @@ class SendHabitReminders extends Command
                 // If the habit doesn't have a completion for today
                 if ($habit->completions->isEmpty()) {
                     // Make sure it started before or on today
-                    if (! $habit->start_date || $habit->start_date <= $today) {
+                    if ($habit->start_date <= $today) {
                         $uncompletedCount++;
                     }
                 }

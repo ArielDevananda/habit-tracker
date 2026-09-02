@@ -12,7 +12,7 @@ class UpdateHabitRequest extends StoreHabitRequest
     public function authorize(): bool
     {
         $habit = $this->route('habit');
-        
+
         if (! $habit instanceof Habit) {
             $habit = Habit::find($habit);
         }

@@ -64,7 +64,7 @@ class Habit extends Model
     public function recalculateStreak(): void
     {
         $completions = $this->completions()->orderBy('completed_on')->get();
-        
+
         $completedDates = [];
         foreach ($completions as $c) {
             $isSuccess = false;
@@ -73,15 +73,15 @@ class Habit extends Model
             } else {
                 $isSuccess = $c->value >= ($this->target_value ?? 1);
             }
-            
+
             if ($isSuccess) {
                 $completedDates[] = Carbon::parse($c->completed_on)->format('Y-m-d');
             }
         }
-        
+
         $startDate = Carbon::parse($this->start_date)->startOfDay();
         $today = Carbon::today();
-        
+
         $scheduledDates = [];
         $current = $startDate->copy();
         while ($current->lte($today)) {
@@ -93,20 +93,20 @@ class Habit extends Model
                     $add = true;
                 }
             }
-            
+
             if ($add) {
                 $scheduledDates[] = $current->format('Y-m-d');
             }
             $current->addDay();
         }
-        
+
         $currentStreak = 0;
         $longestStreak = 0;
         $tempStreak = 0;
         $todayStr = $today->format('Y-m-d');
-        
+
         $scheduledDatesRev = array_reverse($scheduledDates);
-        
+
         foreach ($scheduledDatesRev as $date) {
             if (in_array($date, $completedDates)) {
                 $currentStreak++;
@@ -117,7 +117,7 @@ class Habit extends Model
                 break;
             }
         }
-        
+
         foreach ($scheduledDates as $date) {
             if (in_array($date, $completedDates)) {
                 $tempStreak++;
@@ -128,18 +128,20 @@ class Habit extends Model
                 $tempStreak = 0;
             }
         }
-        
+
         $this->updateQuietly([
             'current_streak' => $currentStreak,
             'longest_streak' => $longestStreak,
         ]);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return HasMany<HabitCompletion, $this> */
     public function completions(): HasMany
     {
         return $this->hasMany(HabitCompletion::class);

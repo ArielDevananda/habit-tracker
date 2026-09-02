@@ -39,13 +39,13 @@ test('dashboard only includes completions from the last seven days', function ()
     $includedCompletion = HabitCompletion::factory()
         ->for($habit)
         ->create([
-            'completed_on' => today()->subDays(6),
+            'completed_on' => today(),
         ]);
 
     HabitCompletion::factory()
         ->for($habit)
         ->create([
-            'completed_on' => today()->subDays(7),
+            'completed_on' => now()->startOfWeek()->subDay(),
         ]);
 
     $this->actingAs($user)
@@ -66,10 +66,11 @@ test('authenticated user can create a daily habit', function () {
     $user = User::factory()->create();
 
     $response = $this->actingAs($user)
+        ->from(route('dashboard'))
         ->post(route('habits.store'), [
             'name' => 'Read Books',
             'description' => 'Read every evening',
-            'category' => 'Learning',
+            'category' => 'General',
             'target_value' => 20,
             'unit' => 'pages',
             'frequency' => 'daily',
@@ -103,6 +104,7 @@ test('habit owner can update their habit', function () {
         ]);
 
     $response = $this->actingAs($user)
+        ->from(route('dashboard'))
         ->put(route('habits.update', $habit), [
             'name' => 'Exercise',
             'description' => 'Exercise every Monday, Wednesday, and Friday',
@@ -137,6 +139,7 @@ test('habit owner can delete their habit', function () {
         ->create();
 
     $response = $this->actingAs($user)
+        ->from(route('dashboard'))
         ->delete(route('habits.destroy', $habit));
 
     $response->assertRedirect(route('dashboard'));
@@ -258,6 +261,7 @@ test(
 
         $payload = [
             'name' => 'Read Books',
+            'type' => 'binary',
             'target_value' => 20,
             'unit' => 'pages',
             'frequency' => 'daily',
@@ -277,24 +281,24 @@ test(
         $this->assertDatabaseCount('habits', 0);
     },
 )->with([
-    'unit without target value' => [
-        ['target_value' => null, 'unit' => 'pages'],
+    'quantity type requires target value' => [
+        ['type' => 'quantity', 'target_value' => null, 'unit' => 'pages'],
         'target_value',
     ],
-    'target value without unit' => [
-        ['target_value' => 20, 'unit' => null],
-        'unit',
+    'duration type requires target value' => [
+        ['type' => 'duration', 'target_value' => null, 'unit' => 'minutes'],
+        'target_value',
     ],
     'non numeric target value' => [
-        ['target_value' => 'many', 'unit' => 'pages'],
+        ['type' => 'quantity', 'target_value' => 'many', 'unit' => 'pages'],
         'target_value',
     ],
     'target value below minimum' => [
-        ['target_value' => 0, 'unit' => 'pages'],
+        ['type' => 'quantity', 'target_value' => 0, 'unit' => 'pages'],
         'target_value',
     ],
     'target value above maximum' => [
-        ['target_value' => 1000000, 'unit' => 'pages'],
+        ['type' => 'quantity', 'target_value' => 1000000, 'unit' => 'pages'],
         'target_value',
     ],
 ]);

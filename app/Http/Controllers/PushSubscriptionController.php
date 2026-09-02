@@ -2,27 +2,30 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class PushSubscriptionController extends Controller
 {
     /**
      * Update user's push subscription.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request)
+    public function update(Request $request): JsonResponse
     {
         $request->validate([
-            'endpoint'    => 'required|string',
-            'keys.auth'   => 'required|string',
+            'endpoint' => 'required|string',
+            'keys.auth' => 'required|string',
             'keys.p256dh' => 'required|string',
         ]);
 
+        /** @var string $endpoint */
         $endpoint = $request->endpoint;
-        $token = $request->keys['auth'];
-        $key = $request->keys['p256dh'];
+
+        /** @var array{auth: string, p256dh: string} $keys */
+        $keys = $request->keys;
+
+        $token = $keys['auth'];
+        $key = $keys['p256dh'];
 
         $user = $request->user();
         $user->updatePushSubscription($endpoint, $key, $token);
@@ -32,14 +35,11 @@ class PushSubscriptionController extends Controller
 
     /**
      * Delete user's push subscriptions.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy(Request $request)
+    public function destroy(Request $request): JsonResponse
     {
         $request->user()->pushSubscriptions()->delete();
-        
+
         return response()->json(['success' => true]);
     }
 }

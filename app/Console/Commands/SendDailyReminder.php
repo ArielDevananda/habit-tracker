@@ -46,7 +46,7 @@ class SendDailyReminder extends Command
             // Count how many habits are not yet completed today
             $pending = $habits->filter(function ($habit) use ($today) {
                 // Check start date
-                if ($habit->start_date && $habit->start_date->copy()->startOfDay()->gt($today)) {
+                if ($habit->start_date->copy()->startOfDay()->gt($today)) {
                     return false;
                 }
 

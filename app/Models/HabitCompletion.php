@@ -29,6 +29,7 @@ class HabitCompletion extends Model
     /** @use HasFactory<HabitCompletionFactory> */
     use HasFactory;
 
+    /** @return BelongsTo<Habit, $this> */
     public function habit(): BelongsTo
     {
         return $this->belongsTo(Habit::class);

@@ -69,7 +69,7 @@ class HabitSeeder extends Seeder
                 'unit' => null,
                 'frequency' => 'daily',
                 'days_of_week' => null,
-                'is_active' => true,
+                'status' => 'active',
                 'start_date' => today()->subDays(30),
             ],
         ];

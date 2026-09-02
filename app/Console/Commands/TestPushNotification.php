@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\User;
 use App\Notifications\HabitReminderNotification;
+use Illuminate\Console\Command;
 
 class TestPushNotification extends Command
 {
@@ -25,21 +25,22 @@ class TestPushNotification extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(): void
     {
         $users = User::whereHas('pushSubscriptions')->get();
-        
+
         if ($users->isEmpty()) {
             $this->error('Tidak ada user yang berlangganan push notification di database!');
+
             return;
         }
 
         $message = $this->argument('message');
-        
+
         foreach ($users as $user) {
             $user->notify(new HabitReminderNotification($message));
         }
-        
+
         $this->info("Notifikasi telah dimasukkan ke antrean (Queue) untuk {$users->count()} user.");
         $this->info("Pesan: {$message}");
     }
