@@ -92,7 +92,7 @@ class CheckAchievements implements ShouldQueue
     }
 
     /**
-     * @param array<int> $unlockedIds
+     * @param  array<int>  $unlockedIds
      */
     private function unlockAchievement(User $user, ?Achievement $achievement, array &$unlockedIds): void
     {

@@ -12,7 +12,7 @@ class AchievementSeeder extends Seeder
      */
     public function run(): void
     {
-        Achievement::insert([
+        Achievement::upsert([
             [
                 'type' => '7_day_streak',
                 'name' => '7-Day Streak',
@@ -37,6 +37,6 @@ class AchievementSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-        ]);
+        ], ['type'], ['name', 'description', 'icon', 'updated_at']);
     }
 }
