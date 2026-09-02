@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\GoalController;
 use App\Http\Controllers\HabitController;
+use App\Http\Controllers\InsightController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\RoutineController;
@@ -30,6 +32,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/analytics', [HabitController::class, 'analytics'])->name('analytics');
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
+    Route::get('/insights', [InsightController::class, 'index'])->name('insights.index');
+    Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.index');
 
     // Notifications
     Route::post('/api/push-subscribe', [PushSubscriptionController::class, 'update'])->name('push.subscribe');

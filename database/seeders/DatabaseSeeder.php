@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
         );
 
         $this->call([
+            AchievementSeeder::class,
             HabitSeeder::class,
             HabitCompletionSeeder::class,
         ]);

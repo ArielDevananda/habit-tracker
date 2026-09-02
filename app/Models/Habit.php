@@ -154,8 +154,8 @@ class Habit extends Model
         return $this->belongsToMany(Goal::class);
     }
 
-    /** @return \Illuminate\Database\Eloquent\Relations\BelongsToMany<Routine, $this> */
-    public function routines(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    /** @return BelongsToMany<Routine, $this> */
+    public function routines(): BelongsToMany
     {
         return $this->belongsToMany(Routine::class, 'routine_habit')->withPivot('order');
     }

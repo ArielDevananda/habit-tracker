@@ -7,6 +7,8 @@ import {
     Calendar as CalendarIcon,
     Target,
     Repeat,
+    Lightbulb,
+    Trophy,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -49,6 +51,16 @@ const mainNavItems: NavItem[] = [
         title: 'Calendar',
         href: '/calendar',
         icon: CalendarIcon,
+    },
+    {
+        title: 'Insights',
+        href: '/insights',
+        icon: Lightbulb,
+    },
+    {
+        title: 'Achievements',
+        href: '/achievements',
+        icon: Trophy,
     },
     {
         title: 'Analytics',

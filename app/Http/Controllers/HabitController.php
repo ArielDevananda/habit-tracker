@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\HabitCompleted;
 use App\Http\Requests\StoreHabitRequest;
 use App\Http\Requests\UpdateHabitRequest;
 use App\Models\Habit;
@@ -208,6 +209,8 @@ class HabitController extends Controller
                 'value' => $habit->target_value ?? '1',
             ]);
             $message = __('Habit completed!');
+
+            HabitCompleted::dispatch($request->user(), $habit);
         }
 
         $habit->recalculateStreak();
@@ -239,10 +242,16 @@ class HabitController extends Controller
         if ($value <= 0) {
             $habit->completions()->whereDate('completed_on', $targetDate)->delete();
         } else {
+            $isNew = ! $habit->completions()->whereDate('completed_on', $targetDate)->exists();
+
             $habit->completions()->updateOrCreate(
                 ['completed_on' => $targetDate],
-                ['value' => $value]
+                ['value' => (string) $value]
             );
+
+            if ($isNew || $value >= ((float) $habit->target_value)) {
+                HabitCompleted::dispatch($request->user(), $habit);
+            }
         }
 
         $habit->recalculateStreak();
