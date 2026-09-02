@@ -57,4 +57,16 @@ class User extends Authenticatable implements PasskeyUser
     {
         return $this->hasMany(Habit::class);
     }
+
+    /** @return HasMany<Goal, $this> */
+    public function goals(): HasMany
+    {
+        return $this->hasMany(Goal::class);
+    }
+
+    /** @return HasMany<Routine, $this> */
+    public function routines(): HasMany
+    {
+        return $this->hasMany(Routine::class);
+    }
 }

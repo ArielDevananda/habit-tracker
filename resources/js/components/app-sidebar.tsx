@@ -5,6 +5,8 @@ import {
     LayoutGrid,
     ChartBar,
     Calendar as CalendarIcon,
+    Target,
+    Repeat,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -32,6 +34,16 @@ const mainNavItems: NavItem[] = [
         title: 'My Habits',
         href: '/habits',
         icon: BookOpen,
+    },
+    {
+        title: 'Goals',
+        href: '/goals',
+        icon: Target,
+    },
+    {
+        title: 'Routines',
+        href: '/routines',
+        icon: Repeat,
     },
     {
         title: 'Calendar',

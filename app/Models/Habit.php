@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
@@ -145,6 +146,18 @@ class Habit extends Model
     public function completions(): HasMany
     {
         return $this->hasMany(HabitCompletion::class);
+    }
+
+    /** @return BelongsToMany<Goal, $this> */
+    public function goals(): BelongsToMany
+    {
+        return $this->belongsToMany(Goal::class);
+    }
+
+    /** @return \Illuminate\Database\Eloquent\Relations\BelongsToMany<Routine, $this> */
+    public function routines(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Routine::class, 'routine_habit')->withPivot('order');
     }
 
     /**

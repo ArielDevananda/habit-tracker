@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\GoalController;
 use App\Http\Controllers\HabitController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PushSubscriptionController;
+use App\Http\Controllers\RoutineController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -22,6 +24,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('habits.toggle');
     Route::post('habits/{habit}/value', [HabitController::class, 'updateValue'])
         ->name('habits.value');
+
+    Route::resource('goals', GoalController::class);
+    Route::resource('routines', RoutineController::class);
 
     Route::get('/analytics', [HabitController::class, 'analytics'])->name('analytics');
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
